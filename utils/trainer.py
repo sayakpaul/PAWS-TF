@@ -2,9 +2,6 @@
 References:
 	* https://github.com/facebookresearch/suncet/blob/master/src/paws_train.py
 """
-
-import labeled_loader
-import multicrop_loader
 import losses
 
 import tensorflow as tf
@@ -15,6 +12,7 @@ paws_loss = losses.get_paws_loss(
         tau=0.1,
         T=0.25,
         me_max=True)
+
 
 def train_step(unsup_images, sup_loader, encoder):
 	# Get batch size for unsupervised images
@@ -46,7 +44,7 @@ def train_step(unsup_images, sup_loader, encoder):
 	anchor_views = z[:2 * u_batch_size]
 	anchor_views = tf.concat([anchor_views, z_mc], dim=1)
 
-	# Step 3. compute paws loss with me-max regularization
+	# Compute paws loss with me-max regularization
 	(ploss, me_max) = paws_loss(
 		anchor_views=anchor_views,
 		anchor_supports=anchor_supports,
@@ -55,4 +53,5 @@ def train_step(unsup_images, sup_loader, encoder):
 		target_supports=target_supports,
 		target_support_labels=labels)
 	loss = ploss + me_max
+	return loss
 

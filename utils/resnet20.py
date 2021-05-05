@@ -230,7 +230,8 @@ def prediction_head(x, hidden_dim=128, mx=4):
 # ResNet164  | 18  |
 # ResNet1001 | 111 |
 
-def get_network(n=2, hidden_dim=128, use_pred=False):
+def get_network(n=2, hidden_dim=128, use_pred=False,
+                return_before_head=False):
     depth = n * 9 + 2
     n_blocks = ((depth - 2) // 9) - 1
 
@@ -246,12 +247,21 @@ def get_network(n=2, hidden_dim=128, use_pred=False):
     x = learner(x, n_blocks)
 
     # Projections
-    x = GlobalAvgPool2D()(x)
-    outputs = projection_head(x, hidden_dim=hidden_dim)
+    trunk_output = GlobalAvgPool2D()(x)
+    projection_outputs = projection_head(trunk_output, hidden_dim=hidden_dim)
+
+    if return_before_head:
+        model = Model(inputs, [trunk_output, projection_outputs])
+    else:
+        model = Model(inputs, projection_outputs)
 
     # Predictions
     if use_pred:
-        outputs = prediction_head(x)
+        prediction_outputs = prediction_head(projection_outputs)
+        if return_before_head:
+            model = Model(inputs, [projection_outputs, prediction_outputs])
+        else:
+            model = Model(inputs, prediction_outputs)
 
-    return Model(inputs, outputs)
+    return model
 
