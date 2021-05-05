@@ -3,9 +3,8 @@ References:
 	* https://github.com/facebookresearch/suncet/blob/master/src/paws_train.py
 """
 import losses
-
 import tensorflow as tf
-import copy
+
 
 paws_loss = losses.get_paws_loss(
         multicrop=6,
@@ -28,13 +27,14 @@ def train_step(unsup_images, sup_loader, encoder):
 	imgs = tf.concat(imgs + simgs, axis=0)
 
 	# Pass through the global views (including images from the
-	# support set) and multicrop views
-	z = encoder(imgs)
-	z_mc = encoder(mc_imgs)
+	# support set) and multicrop views.
+	# h: trunk output, z, z_mc: projection output
+	h, z = encoder(imgs)
+	_, z_mc = encoder(mc_imgs)
 
 	# Determine anchor views / supports and their  corresponding
 	# target views/supports (we are not using prediction head)
-	h = copy.deepcopy(z)
+	h = z
 	target_supports = h[2 * u_batch_size:].detach()
 	target_views = h[:2 * u_batch_size].detach()
 	target_views = tf.concat([
