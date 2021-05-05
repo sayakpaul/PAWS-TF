@@ -235,7 +235,7 @@ def get_network(n=2, hidden_dim=128, use_pred=False):
     n_blocks = ((depth - 2) // 9) - 1
 
     # The input tensor
-    inputs = Input(shape=(32, 32, 3))
+    inputs = Input(shape=(None, None, 3))
     x = experimental.preprocessing.Rescaling(scale=1./127.5,
                                              offset=-1)(inputs)
 

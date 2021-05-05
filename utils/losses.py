@@ -55,8 +55,8 @@ def get_paws_loss(multicrop=6,
         probs = snn(anchor_views, anchor_supports, anchor_support_labels)
 
         # Step 2: Compute targets for anchor predictions
-        targets = snn(target_views, target_supports,
-                      target_support_labels)
+        targets = tf.stop_gradient(snn(target_views, target_supports,
+                      target_support_labels))
         targets = sharpen(targets)
         if multicrop > 0:
             mc_target = 0.5 * (
