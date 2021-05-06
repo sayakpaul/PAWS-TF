@@ -20,7 +20,7 @@ def train_step(unsup_images, sup_loader, encoder: tf.keras.Model):
 	# Unsupervised imgs (2 views)
 	imgs = tf.concat([u for u in unsup_images[:2]], axis=0)
 	# Unsupervised multicrop img views (6 views)
-	mc_imgs = tf.concat([u for u in unsup_images[2:-1]], axis=0)
+	mc_imgs = tf.concat([u for u in unsup_images[2:]], axis=0)
 	# Segregate images and labels from support set
 	simgs, labels = sup_loader
 	# Concatenate unlabeled images and labeled support images
@@ -56,6 +56,6 @@ def train_step(unsup_images, sup_loader, encoder: tf.keras.Model):
 			target_support_labels=labels)
 		loss = ploss + me_max
 	# Compute gradients
-	gradients = tape.graident(loss, encoder.trainable_variables)
+	gradients = tape.gradient(loss, encoder.trainable_variables)
 	return loss, gradients
 

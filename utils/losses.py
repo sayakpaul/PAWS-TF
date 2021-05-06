@@ -35,7 +35,7 @@ def get_paws_loss(multicrop=6,
         supports =tf.math.l2_normalize(supports)
 
         # Step 2: Compute similarity
-        return tf.nn.softmax(query @ tf.transpose(supports) / tau) @ labels
+        return tf.nn.softmax(query @ tf.transpose(supports) / tau, axis=1) @ labels
 
     def loss(
             anchor_views,
@@ -59,10 +59,7 @@ def get_paws_loss(multicrop=6,
                       target_support_labels))
         targets = sharpen(targets)
         if multicrop > 0:
-            mc_target = 0.5 * (
-                tf.concat(
-                    [targets[:batch_size], targets[batch_size:]],
-                    axis=0))
+            mc_target = 0.5*(targets[:batch_size]+targets[batch_size:])
             targets = tf.concat(
                 [targets, *[mc_target for _ in range(multicrop)]],
                 axis=0)
