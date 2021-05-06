@@ -231,7 +231,7 @@ def prediction_head(x, hidden_dim=128, mx=4):
 # ResNet1001 | 111 |
 
 def get_network(n=2, hidden_dim=128, use_pred=False,
-                return_before_head=False):
+                return_before_head=True):
     depth = n * 9 + 2
     n_blocks = ((depth - 2) // 9) - 1
 

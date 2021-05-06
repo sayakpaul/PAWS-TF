@@ -3,7 +3,6 @@ import tensorflow as tf
 import numpy as np
 
 
-SUPPORT_BS = 160
 AUTO = tf.data.AUTOTUNE
 
 @tf.function
@@ -28,13 +27,14 @@ def support_sampler(sampled_labels):
     return np.concatenate(idxs)
 
 
-def get_support_ds(sampled_train, sampled_labels):
+def get_support_ds(sampled_train, sampled_labels, bs=160):
     """
     Prepares TensorFlow dataset with sampling as suggested in:
     https://arxiv.org/abs/2104.13963 (See Appendix C)
 
     :param sampled_train: images (batch_size, h, w, nb_channels)
     :param sampled_labels: labels (batch_size, )
+    :param bs: batch size (int)
     :return: TensorFlow dataset object
     """
     random_balanced_idx = support_sampler()
@@ -43,8 +43,8 @@ def get_support_ds(sampled_train, sampled_labels):
     support_ds = tf.data.Dataset.from_tensor_slices((temp_train, temp_labels))
     support_ds = (
         support_ds
-        .shuffle(SUPPORT_BS)
+        .shuffle(bs * 100)
         .map(aug_for_labeled, num_parallel_calls=AUTO)
-        .batch(SUPPORT_BS)
+        .batch(bs)
     )
     return support_ds

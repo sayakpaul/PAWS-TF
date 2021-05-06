@@ -13,7 +13,7 @@ paws_loss = losses.get_paws_loss(
         me_max=True)
 
 
-def train_step(unsup_images, sup_loader, encoder):
+def train_step(unsup_images, sup_loader, encoder: tf.keras.Model):
 	# Get batch size for unsupervised images
 	u_batch_size = tf.shape(unsup_images)[0]
 
@@ -26,32 +26,35 @@ def train_step(unsup_images, sup_loader, encoder):
 	# Concatenate unlabeled images and labeled support images
 	imgs = tf.concat(imgs + simgs, axis=0)
 
-	# Pass through the global views (including images from the
-	# support set) and multicrop views.
-	# h: trunk output, z, z_mc: projection output
-	h, z = encoder(imgs)
-	_, z_mc = encoder(mc_imgs)
+	with tf.GradientTape() as tape:
+		# Pass through the global views (including images from the
+		# support set) and multicrop views.
+		# h: trunk output, z, z_mc: projection output
+		h, z = encoder(imgs)
+		_, z_mc = encoder(mc_imgs)
 
-	# Determine anchor views / supports and their  corresponding
-	# target views/supports (we are not using prediction head)
-	h = z
-	target_supports = h[2 * u_batch_size:].detach()
-	target_views = h[:2 * u_batch_size].detach()
-	target_views = tf.concat([
-		target_views[u_batch_size:],
-		target_views[:u_batch_size]], axis=0)
-	anchor_supports = z[2 * u_batch_size:]
-	anchor_views = z[:2 * u_batch_size]
-	anchor_views = tf.concat([anchor_views, z_mc], dim=1)
+		# Determine anchor views / supports and their  corresponding
+		# target views/supports (we are not using prediction head)
+		h = z
+		target_supports = h[2 * u_batch_size:]
+		target_views = h[:2 * u_batch_size]
+		target_views = tf.concat([
+			target_views[u_batch_size:],
+			target_views[:u_batch_size]], axis=0)
+		anchor_supports = z[2 * u_batch_size:]
+		anchor_views = z[:2 * u_batch_size]
+		anchor_views = tf.concat([anchor_views, z_mc], dim=1)
 
-	# Compute paws loss with me-max regularization
-	(ploss, me_max) = paws_loss(
-		anchor_views=anchor_views,
-		anchor_supports=anchor_supports,
-		anchor_support_labels=labels,
-		target_views=target_views,
-		target_supports=target_supports,
-		target_support_labels=labels)
-	loss = ploss + me_max
-	return loss
+		# Compute paws loss with me-max regularization
+		(ploss, me_max) = paws_loss(
+			anchor_views=anchor_views,
+			anchor_supports=anchor_supports,
+			anchor_support_labels=labels,
+			target_views=target_views,
+			target_supports=target_supports,
+			target_support_labels=labels)
+		loss = ploss + me_max
+	# Compute gradients
+	gradients = tape.graident(loss, encoder.trainable_variables)
+	return loss, gradients
 
