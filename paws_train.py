@@ -76,7 +76,7 @@ for e in range(EPOCHS):
 									  resnet20_enc.trainable_variables))
 
 	print(f"Epoch: {e} Loss: {np.mean(batch_wise_losses):.2f}" 
-		f"Time elapsed: {time.time()-start_time:.2f} secs")
+		f" Time elapsed: {time.time()-start_time:.2f} secs")
 	print("")
 	epoch_losses.append(np.mean(batch_wise_losses))
 
