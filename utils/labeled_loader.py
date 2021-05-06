@@ -5,6 +5,7 @@ import numpy as np
 
 AUTO = tf.data.AUTOTUNE
 
+
 @tf.function
 def aug_for_labeled(image, label):
     image = tf.image.random_crop(image, (32, 32, 3))
@@ -41,12 +42,13 @@ def get_support_ds(sampled_train, sampled_labels, bs=160):
     :return: TensorFlow dataset object
     """
     random_balanced_idx = support_sampler(sampled_labels)
-    temp_train, temp_labels = sampled_train[random_balanced_idx],\
-        sampled_labels[random_balanced_idx]
+    temp_train, temp_labels = (
+        sampled_train[random_balanced_idx],
+        sampled_labels[random_balanced_idx],
+    )
     support_ds = tf.data.Dataset.from_tensor_slices((temp_train, temp_labels))
     support_ds = (
-        support_ds
-        .shuffle(bs * 100)
+        support_ds.shuffle(bs * 100)
         .map(aug_for_labeled, num_parallel_calls=AUTO)
         .batch(bs)
     )

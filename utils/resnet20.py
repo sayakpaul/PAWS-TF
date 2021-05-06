@@ -200,27 +200,37 @@ def projection_block(x, n_filters, strides=(2, 2), n=2):
 def projection_head(x, hidden_dim=128):
     """Constructs the projection head."""
     for i in range(2):
-        x = Dense(hidden_dim, use_bias=False,
-                  name=f"projection_layer_{i}",
-                  kernel_regularizer=l2(WEIGHT_DECAY))(x)
+        x = Dense(
+            hidden_dim,
+            use_bias=False,
+            name=f"projection_layer_{i}",
+            kernel_regularizer=l2(WEIGHT_DECAY),
+        )(x)
         x = BatchNormalization()(x)
         x = Activation("relu")(x)
-    outputs = Dense(hidden_dim, use_bias=False,
-                    name="projection_output")(x)
+    outputs = Dense(hidden_dim, use_bias=False, name="projection_output")(x)
     return outputs
+
 
 def prediction_head(x, hidden_dim=128, mx=4):
     """Constructs the prediction head."""
     x = BatchNormalization()(x)
-    x = Dense(hidden_dim//mx, use_bias=False,
-                  name=f"prediction_layer_0",
-                  kernel_regularizer=l2(WEIGHT_DECAY))(x)
+    x = Dense(
+        hidden_dim // mx,
+        use_bias=False,
+        name=f"prediction_layer_0",
+        kernel_regularizer=l2(WEIGHT_DECAY),
+    )(x)
     x = BatchNormalization()(x)
-    x =  Activation("relu")(x)
-    x = Dense(hidden_dim, use_bias=False,
-              name="prediction_output",
-              kernel_regularizer=l2(WEIGHT_DECAY))(x)
+    x = Activation("relu")(x)
+    x = Dense(
+        hidden_dim,
+        use_bias=False,
+        name="prediction_output",
+        kernel_regularizer=l2(WEIGHT_DECAY),
+    )(x)
     return x
+
 
 # -------------------
 # Model      | n   |
@@ -230,15 +240,14 @@ def prediction_head(x, hidden_dim=128, mx=4):
 # ResNet164  | 18  |
 # ResNet1001 | 111 |
 
-def get_network(n=2, hidden_dim=128, use_pred=False,
-                return_before_head=True):
+
+def get_network(n=2, hidden_dim=128, use_pred=False, return_before_head=True):
     depth = n * 9 + 2
     n_blocks = ((depth - 2) // 9) - 1
 
     # The input tensor
     inputs = Input(shape=(None, None, 3))
-    x = experimental.preprocessing.Rescaling(scale=1./127.5,
-                                             offset=-1)(inputs)
+    x = experimental.preprocessing.Rescaling(scale=1.0 / 127.5, offset=-1)(inputs)
 
     # The Stem Convolution Group
     x = stem(x)
@@ -264,4 +273,3 @@ def get_network(n=2, hidden_dim=128, use_pred=False,
             model = Model(inputs, prediction_outputs)
 
     return model
-

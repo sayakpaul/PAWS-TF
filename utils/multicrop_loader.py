@@ -8,7 +8,7 @@ import tensorflow as tf
 
 
 BS = 64
-SIZE_CROPS = [32, 18] # 32: global views, 18: local views
+SIZE_CROPS = [32, 18]  # 32: global views, 18: local views
 NUM_CROPS = [2, 6]
 GLOBAL_SCALE = [0.75, 1.0]
 LOCAL_SCALE = [0.3, 0.75]
@@ -75,9 +75,12 @@ def random_resize_crop(image, scale, crop_size):
         image_shape = 24
         image = tf.image.resize(image, (image_shape, image_shape))
     # Get the crop size for given scale
-    size = tf.random.uniform(shape=(1,),
-                            minval=scale[0]*image_shape, maxval=scale[1]*image_shape,
-                            dtype=tf.float32)
+    size = tf.random.uniform(
+        shape=(1,),
+        minval=scale[0] * image_shape,
+        maxval=scale[1] * image_shape,
+        dtype=tf.float32,
+    )
     size = tf.cast(size, tf.int32)[0]
     # Get the crop from the image
     crop = tf.image.random_crop(image, (size, size, 3))
@@ -96,12 +99,11 @@ def get_multicrop_loader(ds: tf.data.Dataset):
             elif SIZE_CROPS[i] == 18:
                 scale = LOCAL_SCALE
 
-            loader = (
-                ds
-                .map(lambda x: random_resize_crop(x, scale,
-                                                  SIZE_CROPS[i]),
-                     num_parallel_calls=AUTO, deterministic=True)
+            loader = ds.map(
+                lambda x: random_resize_crop(x, scale, SIZE_CROPS[i]),
+                num_parallel_calls=AUTO,
+                deterministic=True,
             )
-            loaders += (loader, )
+            loaders += (loader,)
 
     return tf.data.Dataset.zip(loaders)
