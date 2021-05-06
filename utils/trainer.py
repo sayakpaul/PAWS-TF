@@ -2,7 +2,7 @@
 References:
 	* https://github.com/facebookresearch/suncet/blob/master/src/paws_train.py
 """
-import losses
+from . import losses
 import tensorflow as tf
 
 
@@ -15,16 +15,17 @@ paws_loss = losses.get_paws_loss(
 
 def train_step(unsup_images, sup_loader, encoder: tf.keras.Model):
 	# Get batch size for unsupervised images
-	u_batch_size = tf.shape(unsup_images)[0]
+	u_batch_size = tf.shape(unsup_images[0])[0]
 
 	# Unsupervised imgs (2 views)
-	imgs = [u for u in unsup_images[:2]]
+	imgs = tf.concat([u for u in unsup_images[:2]], axis=0)
 	# Unsupervised multicrop img views (6 views)
 	mc_imgs = tf.concat([u for u in unsup_images[2:-1]], axis=0)
 	# Segregate images and labels from support set
 	simgs, labels = sup_loader
 	# Concatenate unlabeled images and labeled support images
-	imgs = tf.concat(imgs + simgs, axis=0)
+	imgs, simgs = tf.cast(imgs, tf.float32), tf.cast(simgs, tf.float32)
+	imgs = tf.concat([imgs, simgs], axis=0)
 
 	with tf.GradientTape() as tape:
 		# Pass through the global views (including images from the
@@ -43,7 +44,7 @@ def train_step(unsup_images, sup_loader, encoder: tf.keras.Model):
 			target_views[:u_batch_size]], axis=0)
 		anchor_supports = z[2 * u_batch_size:]
 		anchor_views = z[:2 * u_batch_size]
-		anchor_views = tf.concat([anchor_views, z_mc], dim=1)
+		anchor_views = tf.concat([anchor_views, z_mc], axis=0)
 
 		# Compute paws loss with me-max regularization
 		(ploss, me_max) = paws_loss(

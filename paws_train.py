@@ -1,3 +1,4 @@
+# Imports
 from utils import resnet20, multicrop_loader, labeled_loader, trainer
 import tensorflow as tf
 import numpy as np
@@ -30,7 +31,8 @@ multicrop_ds = (
 sampled_idx = np.random.choice(len(x_train), SUPPORT_SAMPLES)
 sampled_train, sampled_labels = x_train[sampled_idx],\
 								y_train[sampled_idx].squeeze()
-sampled_labels = tf.one_hot(sampled_labels, depth=np.unique(sampled_labels))
+sampled_labels = tf.one_hot(sampled_labels,
+						depth=len(np.unique(sampled_labels))).numpy()
 
 # Label-smoothing (reference: https://t.ly/CSYO)
 sampled_labels *= (1 - LABEL_SMOOTHING)
@@ -39,10 +41,12 @@ sampled_labels += (LABEL_SMOOTHING / sampled_labels.shape[1])
 # Prepare dataset object for the support samples
 support_ds = labeled_loader.get_support_ds(sampled_train,
 										   sampled_labels, bs=SUPPORT_BS)
+print("Data loaders prepared.")
 
 # Initialize encoder and optimizer
 resnet20_enc = resnet20.get_network(n=2, hidden_dim=128)
 optimizer = tf.keras.optimizers.SGD(learning_rate=0.1, momentum=0.9)
+print("Model and optimizer initialized.")
 
 # Loss tracker
 epoch_losses = []
