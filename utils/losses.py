@@ -35,7 +35,7 @@ def get_paws_loss(multicrop=6,
         supports =tf.math.l2_normalize(supports)
 
         # Step 2: Compute similarity
-        return tf.nn.softmax(tf.matmul(query, supports) / tau) @ labels
+        return tf.nn.softmax(query @ tf.transpose(supports) / tau) @ labels
 
     def loss(
             anchor_views,
@@ -60,15 +60,20 @@ def get_paws_loss(multicrop=6,
         targets = sharpen(targets)
         if multicrop > 0:
             mc_target = 0.5 * (
-                        targets[:batch_size] + targets[batch_size:])
+                tf.concat(
+                    [targets[:batch_size], targets[batch_size:]],
+                    axis=0))
             targets = tf.concat(
                 [targets, *[mc_target for _ in range(multicrop)]],
                 axis=0)
-        targets[targets < 1e-4] *= 0  # numerical stability
+        # For numerical stability
+        mask = tf.math.less(targets, 1e-4)
+        mask = tf.cast(mask, dtype=targets.dtype)
+        targets *= mask
 
         # Step 3: compute cross-entropy loss H(targets, queries)
         loss = tf.reduce_mean(
-            tf.reduce_sum(tf.mathlog(probs ** (-targets)), axis=1))
+            tf.reduce_sum(tf.math.log(probs ** (-targets)), axis=1))
 
         # Step 4: compute me-max regularizer
         rloss = 0.
