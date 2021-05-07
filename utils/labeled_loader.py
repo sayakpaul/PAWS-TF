@@ -32,7 +32,7 @@ def support_sampler(sampled_labels, bs):
     return np.array(np.concatenate(idxs))
 
 
-def get_support_ds(sampled_train, sampled_labels, bs=160):
+def get_support_ds(sampled_train, sampled_labels, aug=True, bs=160):
     """
     Prepares TensorFlow dataset with sampling as suggested in:
     https://arxiv.org/abs/2104.13963 (See Appendix C)
@@ -48,9 +48,8 @@ def get_support_ds(sampled_train, sampled_labels, bs=160):
         sampled_labels[random_balanced_idx],
     )
     support_ds = tf.data.Dataset.from_tensor_slices((temp_train, temp_labels))
-    support_ds = (
-        support_ds.shuffle(bs * 100)
-        .map(aug_for_labeled, num_parallel_calls=AUTO)
-        .batch(bs)
-    )
-    return support_ds
+    support_ds = support_ds.shuffle(bs * 100)
+    if aug:
+        support_ds = support_ds.map(aug_for_labeled,
+                                    num_parallel_calls=AUTO)
+    return support_ds.batch(bs)
