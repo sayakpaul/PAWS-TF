@@ -1,18 +1,13 @@
 # Imports
-from utils import resnet20, multicrop_loader, labeled_loader, trainer
+from utils import multicrop_loader, labeled_loader, trainer, config
+from models import resnet20
+import matplotlib.pyplot as plt
 import tensorflow as tf
 import numpy as np
 import time
 
 # Constants
-MULTICROP_BS = 64
-SUPPORT_BS = 160
-SUPPORT_SAMPLES = 4000
-SUP_VIEWS = 2
-LABEL_SMOOTHING = 0.1
-EPOCHS = 10
 AUTO = tf.data.AUTOTUNE
-SAVE_PATH = "paws_encoder"
 
 # Load dataset
 (x_train, y_train), (_, _) = tf.keras.datasets.cifar10.load_data()
@@ -20,21 +15,21 @@ SAVE_PATH = "paws_encoder"
 # Prepare Dataset object for multicrop
 train_ds = tf.data.Dataset.from_tensor_slices(x_train)
 multicrop_ds = multicrop_loader.get_multicrop_loader(train_ds)
-multicrop_ds = multicrop_ds.shuffle(MULTICROP_BS * 100).batch(64).prefetch(AUTO)
+multicrop_ds = multicrop_ds.shuffle(config.MULTICROP_BS * 100).batch(64).prefetch(AUTO)
 
 # Prepare support samples
-sampled_idx = np.random.choice(len(x_train), SUPPORT_SAMPLES)
+sampled_idx = np.random.choice(len(x_train), config.SUPPORT_SAMPLES)
 sampled_train, sampled_labels = x_train[sampled_idx], y_train[sampled_idx].squeeze()
 sampled_labels = tf.one_hot(
     sampled_labels, depth=len(np.unique(sampled_labels))
 ).numpy()
 
 # Label-smoothing (reference: https://t.ly/CSYO)
-sampled_labels *= 1 - LABEL_SMOOTHING
-sampled_labels += LABEL_SMOOTHING / sampled_labels.shape[1]
+sampled_labels *= 1 - config.LABEL_SMOOTHING
+sampled_labels += config.LABEL_SMOOTHING / sampled_labels.shape[1]
 
 # Prepare dataset object for the support samples
-support_ds = labeled_loader.get_support_ds(sampled_train, sampled_labels, bs=SUPPORT_BS)
+support_ds = labeled_loader.get_support_ds(sampled_train, sampled_labels, bs=config.SUPPORT_BS)
 print("Data loaders prepared.")
 
 # Initialize encoder and optimizer
@@ -47,7 +42,7 @@ epoch_ce_losses = []
 epoch_me_losses = []
 
 ############## Training ##############
-for e in range(EPOCHS):
+for e in range(config.EPOCHS):
     print(f"=======Starting epoch: {e}=======")
     batch_ce_losses = []
     batch_me_losses = []
@@ -58,8 +53,8 @@ for e in range(EPOCHS):
         # As per Appendix C, for CIFAR10 2x views are needed for making
         # the network better at instance discrimination.
         support_images, support_labels = next(iter(support_ds))
-        support_images = tf.concat([support_images for _ in range(SUP_VIEWS)], axis=0)
-        support_labels = tf.concat([support_labels for _ in range(SUP_VIEWS)], axis=0)
+        support_images = tf.concat([support_images for _ in range(config.SUP_VIEWS)], axis=0)
+        support_labels = tf.concat([support_labels for _ in range(config.SUP_VIEWS)], axis=0)
 
         # Perform training step
         batch_ce_loss, batch_me_loss, gradients = trainer.train_step(
@@ -80,6 +75,16 @@ for e in range(EPOCHS):
     epoch_ce_losses.append(np.mean(batch_ce_losses))
     epoch_me_losses.append(np.mean(batch_me_losses))
 
+# Create a plot to see the cross-entropy losses
+plt.figure(figsize=(8, 8))
+plt.plot(epoch_ce_losses)
+plt.title("Cross-entropy losses during pre-training", fontsize=12)
+plt.grid()
+plt.savefig(config.PRETRAINING_PLOT, dpi=300)
+
 # Serialize model
-resnet20_enc.save(SAVE_PATH)
-print(f"Encoder serialized to : {SAVE_PATH}")
+resnet20_enc.save(config.SAVE_PATH)
+print(f"Encoder serialized to : {config.SAVE_PATH}")
+
+# Serialize other artifacts
+np.save(config.SUPPORT_IDX, sampled_idx)
