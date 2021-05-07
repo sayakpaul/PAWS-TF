@@ -91,6 +91,12 @@ def random_resize_crop(image, scale, crop_size):
 
 
 def get_multicrop_loader(ds: tf.data.Dataset):
+    """
+    Returns a multi-crop dataset.
+
+    :param ds: a TensorFlow dataset object
+    :return: a multi-crop dataset
+    """
     loaders = tuple()
     for i, num_crop in enumerate(NUM_CROPS):
         for _ in range(num_crop):

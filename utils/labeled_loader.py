@@ -27,7 +27,7 @@ def support_sampler(sampled_labels, bs):
     idxs = []
     for class_id in np.arange(0, 10):
         subset_labels = sampled_labels[sampled_labels == class_id]
-        random_sampled = np.random.choice(len(subset_labels), bs//10)
+        random_sampled = np.random.choice(len(subset_labels), bs // 10)
         idxs.append(random_sampled)
     return np.array(np.concatenate(idxs))
 

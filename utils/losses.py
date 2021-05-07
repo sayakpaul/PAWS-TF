@@ -2,6 +2,8 @@
 References:
     * https://arxiv.org/abs/2104.13963
     * https://github.com/facebookresearch/suncet/blob/master/src/losses.py
+Majority of the code comes from here:
+ https://github.com/facebookresearch/suncet/blob/master/src/losses.py
 """
 
 
