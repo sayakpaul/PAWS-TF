@@ -81,10 +81,8 @@ def get_paws_loss(multicrop=6, tau=0.1, T=0.25, me_max=True):
 
     return loss
 
-def get_suncet_loss(num_classes=10,
-    batch_size=64,
-    temperature=0.1,
-    rank=0):
+
+def get_suncet_loss(num_classes=10, batch_size=64, temperature=0.1, rank=0):
     """
     Computes supervised noise contrastive estimation loss (refer
     https://arxiv.org/abs/2006.10803)
@@ -100,7 +98,7 @@ def get_suncet_loss(num_classes=10,
     diag_mask = tf.ones((local_images, total_images))
     offset = rank * local_images
     for i in range(local_images):
-        diag_mask[i, offset + i] = 0.
+        diag_mask[i, offset + i] = 0.0
 
     def contrastive_loss(z, labels):
 
@@ -113,7 +111,7 @@ def get_suncet_loss(num_classes=10,
         probs = tf.math.divide(exp_cs, exp_cs_sum) @ labels
 
         # Step 3: compute loss for predictions
-        targets = labels[offset : offset+local_images]
+        targets = labels[offset : offset + local_images]
         overlap = probs ** (-targets)
         loss = tf.reduce_mean(tf.reduce_sum(tf.math.log(overlap), axis=1))
         return loss

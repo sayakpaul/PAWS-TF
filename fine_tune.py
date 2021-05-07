@@ -23,15 +23,16 @@ sampled_labels = tf.one_hot(
 # Note: no label-smoothing (https://github.com/facebookresearch/suncet/blob/master/configs/paws/cifar10_snn.yaml#L10)
 
 # Prepare dataset object for the support samples
-support_ds = labeled_loader.get_support_ds(sampled_train, sampled_labels,
-                                           aug=False, bs=config.SUPPORT_BS)
+support_ds = labeled_loader.get_support_ds(
+    sampled_train, sampled_labels, aug=False, bs=config.SUPPORT_BS
+)
 print("Data loaders prepared.")
 
 # Initialize encoder and optimizer
-resnet20_enc =tf.keras.models.load_model(config.PRETRAINED_MODEL)
+resnet20_enc = tf.keras.models.load_model(config.PRETRAINED_MODEL)
 for layer in resnet20_enc.layers:
     if isinstance(layer, tf.keras.layers.BatchNormalization):
-        layer.trainable= False
+        layer.trainable = False
     else:
         layer.trainable = True
 

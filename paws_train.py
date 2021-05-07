@@ -1,16 +1,20 @@
 # Imports
-from utils import multicrop_loader, labeled_loader, paws_trainer, config
+from utils import multicrop_loader, labeled_loader, paws_trainer, config, lr_scheduler
 from models import resnet20
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import numpy as np
 import time
 
-# Constants
-AUTO = tf.data.AUTOTUNE
 
 # Load dataset
 (x_train, y_train), (_, _) = tf.keras.datasets.cifar10.load_data()
+
+# Constants
+AUTO = tf.data.AUTOTUNE
+STEPS_PER_EPOCH = int(len(x_train) // config.MULTICROP_BS)
+WARMUP_EPOCHS = int(config.PRETRAINING_EPOCHS * 0.1)
+WARMUP_STEPS = int(WARMUP_EPOCHS * STEPS_PER_EPOCH)
 
 # Prepare Dataset object for multicrop
 train_ds = tf.data.Dataset.from_tensor_slices(x_train)
@@ -29,12 +33,20 @@ sampled_labels *= 1 - config.LABEL_SMOOTHING
 sampled_labels += config.LABEL_SMOOTHING / sampled_labels.shape[1]
 
 # Prepare dataset object for the support samples
-support_ds = labeled_loader.get_support_ds(sampled_train, sampled_labels, bs=config.SUPPORT_BS)
+support_ds = labeled_loader.get_support_ds(
+    sampled_train, sampled_labels, bs=config.SUPPORT_BS
+)
 print("Data loaders prepared.")
 
 # Initialize encoder and optimizer
 resnet20_enc = resnet20.get_network(n=2, hidden_dim=128)
-optimizer = tf.keras.optimizers.SGD(learning_rate=0.1, momentum=0.9)
+scheduled_lrs = lr_scheduler.WarmUpCosine(
+    learning_rate_base=config.WARMUP_LR,
+    total_steps=config.PRETRAINING_EPOCHS * STEPS_PER_EPOCH,
+    warmup_learning_rate=config.START_LR,
+    warmup_steps=WARMUP_STEPS,
+)
+optimizer = tf.keras.optimizers.SGD(learning_rate=scheduled_lrs, momentum=0.9)
 print("Model and optimizer initialized.")
 
 # Loss tracker
@@ -53,8 +65,12 @@ for e in range(config.PRETRAINING_EPOCHS):
         # As per Appendix C, for CIFAR10 2x views are needed for making
         # the network better at instance discrimination.
         support_images, support_labels = next(iter(support_ds))
-        support_images = tf.concat([support_images for _ in range(config.SUP_VIEWS)], axis=0)
-        support_labels = tf.concat([support_labels for _ in range(config.SUP_VIEWS)], axis=0)
+        support_images = tf.concat(
+            [support_images for _ in range(config.SUP_VIEWS)], axis=0
+        )
+        support_labels = tf.concat(
+            [support_labels for _ in range(config.SUP_VIEWS)], axis=0
+        )
 
         # Perform training step
         batch_ce_loss, batch_me_loss, gradients = paws_trainer.train_step(

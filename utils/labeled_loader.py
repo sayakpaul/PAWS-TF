@@ -50,6 +50,5 @@ def get_support_ds(sampled_train, sampled_labels, aug=True, bs=160):
     support_ds = tf.data.Dataset.from_tensor_slices((temp_train, temp_labels))
     support_ds = support_ds.shuffle(bs * 100)
     if aug:
-        support_ds = support_ds.map(aug_for_labeled,
-                                    num_parallel_calls=AUTO)
+        support_ds = support_ds.map(aug_for_labeled, num_parallel_calls=AUTO)
     return support_ds.batch(bs)

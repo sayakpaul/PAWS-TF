@@ -8,6 +8,7 @@ import tensorflow as tf
 
 suncet_loss = losses.get_suncet_loss()
 
+
 def train_step(sup_loader, encoder: tf.keras.Model):
     """
     One step of fine-tuning after PAWS pre-training.
