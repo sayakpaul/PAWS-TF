@@ -32,7 +32,7 @@ def support_sampler(sampled_labels, bs):
     return np.array(np.concatenate(idxs))
 
 
-def get_support_ds(sampled_train, sampled_labels, aug=True, bs=160):
+def get_support_ds(sampled_train, sampled_labels, bs, aug=True):
     """
     Prepares TensorFlow dataset with sampling as suggested in:
     https://arxiv.org/abs/2104.13963 (See Appendix C)

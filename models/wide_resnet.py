@@ -129,7 +129,7 @@ def get_network(hidden_dim=128, use_pred=False, return_before_head=True):
     n = (DEPTH - 4) / 6
     n_stages = [16, 16 * WIDTH_MULT, 32 * WIDTH_MULT, 64 * WIDTH_MULT]
 
-    inputs = layers.Input(shape=(32, 32, 3))
+    inputs = layers.Input(shape=(None, None, 3))
     x = layers.experimental.preprocessing.Rescaling(scale=1.0 / 127.5, offset=-1)(
         inputs
     )
@@ -156,7 +156,7 @@ def get_network(hidden_dim=128, use_pred=False, return_before_head=True):
         stride=(1, 1),
     )(
         conv1
-    )  # Stage 1 (spatial size: 32x32)
+    )  # Stage 1 
     conv3 = layer(
         block_fn,
         n_input_plane=n_stages[1],
@@ -165,7 +165,7 @@ def get_network(hidden_dim=128, use_pred=False, return_before_head=True):
         stride=(2, 2),
     )(
         conv2
-    )  # Stage 2 (spatial size: 16x16)
+    )  # Stage 2 
     conv4 = layer(
         block_fn,
         n_input_plane=n_stages[2],
@@ -174,7 +174,7 @@ def get_network(hidden_dim=128, use_pred=False, return_before_head=True):
         stride=(2, 2),
     )(
         conv3
-    )  # Stage 3 (spatial size: 8x8)
+    )  # Stage 3 
 
     batch_norm = layers.BatchNormalization()(conv4)
     relu = layers.Activation("relu")(batch_norm)

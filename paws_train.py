@@ -1,6 +1,6 @@
 # Imports
 from utils import multicrop_loader, labeled_loader, paws_trainer, config, lr_scheduler
-from models import resnet20
+from models import resnet20, wide_resnet
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import numpy as np
@@ -19,7 +19,7 @@ WARMUP_STEPS = int(WARMUP_EPOCHS * STEPS_PER_EPOCH)
 # Prepare Dataset object for multicrop
 train_ds = tf.data.Dataset.from_tensor_slices(x_train)
 multicrop_ds = multicrop_loader.get_multicrop_loader(train_ds)
-multicrop_ds = multicrop_ds.shuffle(config.MULTICROP_BS * 100).batch(64).prefetch(AUTO)
+multicrop_ds = multicrop_ds.shuffle(config.MULTICROP_BS * 100).batch(config.MULTICROP_BS).prefetch(AUTO)
 
 # Prepare support samples
 sampled_idx = np.random.choice(len(x_train), config.SUPPORT_SAMPLES)
@@ -39,7 +39,7 @@ support_ds = labeled_loader.get_support_ds(
 print("Data loaders prepared.")
 
 # Initialize encoder and optimizer
-resnet20_enc = resnet20.get_network(n=2, hidden_dim=128)
+resnet_enc = resnet20.get_network()
 scheduled_lrs = lr_scheduler.WarmUpCosine(
     learning_rate_base=config.WARMUP_LR,
     total_steps=config.PRETRAINING_EPOCHS * STEPS_PER_EPOCH,
@@ -74,17 +74,17 @@ for e in range(config.PRETRAINING_EPOCHS):
 
         # Perform training step
         batch_ce_loss, batch_me_loss, gradients = paws_trainer.train_step(
-            unsup_imgs, (support_images, support_labels), resnet20_enc
+            unsup_imgs, (support_images, support_labels), resnet_enc
         )
         batch_ce_losses.append(batch_ce_loss.numpy())
         batch_me_losses.append(batch_me_loss.numpy())
 
         # Update the parameters of the encoder
-        optimizer.apply_gradients(zip(gradients, resnet20_enc.trainable_variables))
+        optimizer.apply_gradients(zip(gradients, resnet_enc.trainable_variables))
 
     print(
-        f"Epoch: {e} CE Loss: {np.mean(batch_ce_losses):.2f}"
-        f" ME-MAX Loss: {np.mean(batch_me_losses):.2f}"
+        f"Epoch: {e} CE Loss: {np.mean(batch_ce_losses):.3f}"
+        f" ME-MAX Loss: {np.mean(batch_me_losses):.3f}"
         f" Time elapsed: {time.time()-start_time:.2f} secs"
     )
     print("")
@@ -99,7 +99,7 @@ plt.grid()
 plt.savefig(config.PRETRAINING_PLOT, dpi=300)
 
 # Serialize model
-resnet20_enc.save(config.PRETRAINED_MODEL)
+resnet_enc.save(config.PRETRAINED_MODEL)
 print(f"Encoder serialized to : {config.PRETRAINED_MODEL}")
 
 # Serialize other artifacts
