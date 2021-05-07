@@ -43,35 +43,42 @@ optimizer = tf.keras.optimizers.SGD(learning_rate=0.1, momentum=0.9)
 print("Model and optimizer initialized.")
 
 # Loss tracker
-epoch_losses = []
+epoch_ce_losses = []
+epoch_me_losses = []
 
 ############## Training ##############
 for e in range(EPOCHS):
     print(f"=======Starting epoch: {e}=======")
-    batch_wise_losses = []
+    batch_ce_losses = []
+    batch_me_losses = []
     start_time = time.time()
+
     for unsup_imgs in multicrop_ds:
         # Sample support images
         # As per Appendix C, for CIFAR10 2x views are needed for making
-        # the network better at instance discrimination
+        # the network better at instance discrimination.
         support_images, support_labels = next(iter(support_ds))
         support_images = tf.concat([support_images for _ in range(SUP_VIEWS)], axis=0)
         support_labels = tf.concat([support_labels for _ in range(SUP_VIEWS)], axis=0)
 
         # Perform training step
-        batch_loss, gradients = trainer.train_step(
+        batch_ce_loss, batch_me_loss, gradients = trainer.train_step(
             unsup_imgs, (support_images, support_labels), resnet20_enc
         )
-        batch_wise_losses.append(batch_loss.numpy())
+        batch_ce_losses.append(batch_ce_loss.numpy())
+        batch_me_losses.append(batch_me_loss.numpy())
+
         # Update the parameters of the encoder
         optimizer.apply_gradients(zip(gradients, resnet20_enc.trainable_variables))
 
     print(
-        f"Epoch: {e} Loss: {np.mean(batch_wise_losses):.2f}"
+        f"Epoch: {e} CE Loss: {np.mean(batch_ce_losses):.2f}"
+        f" ME-MAX Loss: {np.mean(batch_me_losses):.2f}"
         f" Time elapsed: {time.time()-start_time:.2f} secs"
     )
     print("")
-    epoch_losses.append(np.mean(batch_wise_losses))
+    epoch_ce_losses.append(np.mean(batch_ce_losses))
+    epoch_me_losses.append(np.mean(batch_me_losses))
 
 # Serialize model
 resnet20_enc.save(SAVE_PATH)

@@ -1,6 +1,6 @@
 """
 References:
-	* https://github.com/facebookresearch/suncet/blob/master/src/paws_train.py
+    * https://github.com/facebookresearch/suncet/blob/master/src/paws_train.py
 """
 from . import losses
 import tensorflow as tf
@@ -10,6 +10,14 @@ paws_loss = losses.get_paws_loss(multicrop=6, tau=0.1, T=0.25, me_max=True)
 
 
 def train_step(unsup_images, sup_loader, encoder: tf.keras.Model):
+    """
+    One step of PAWS training.
+
+    :param unsup_images: unsupervised images (nb_crops, batch_size, h, w, nb_channels)
+    :param sup_loader: data loader for the labeled support set
+    :param encoder: trunk with projection head
+    :return: loss and gradients
+    """
     # Get batch size for unsupervised images
     u_batch_size = tf.shape(unsup_images[0])[0]
 
@@ -54,4 +62,4 @@ def train_step(unsup_images, sup_loader, encoder: tf.keras.Model):
         loss = ploss + me_max
     # Compute gradients
     gradients = tape.gradient(loss, encoder.trainable_variables)
-    return loss, gradients
+    return ploss, me_max, gradients

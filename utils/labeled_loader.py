@@ -13,20 +13,21 @@ def aug_for_labeled(image, label):
     return distorted_image, label
 
 
-def support_sampler(sampled_labels):
+def support_sampler(sampled_labels, bs):
     """
     Samples indices from the label array with a uniform distribution.
 
     :param sampled_labels: labels (batch_size, num_classes)
+    :param bs: batch size (int)
     :return: sampled indices
     """
     # Since the labels are one-hot encoded we first need to get them
-    # in their original form to do the sampling
+    # in their original form to do the sampling.
     sampled_labels = np.argmax(sampled_labels, axis=1).squeeze()
     idxs = []
     for class_id in np.arange(0, 10):
         subset_labels = sampled_labels[sampled_labels == class_id]
-        random_sampled = np.random.choice(len(subset_labels), 16)
+        random_sampled = np.random.choice(len(subset_labels), bs//10)
         idxs.append(random_sampled)
     return np.array(np.concatenate(idxs))
 
@@ -41,7 +42,7 @@ def get_support_ds(sampled_train, sampled_labels, bs=160):
     :param bs: batch size (int)
     :return: TensorFlow dataset object
     """
-    random_balanced_idx = support_sampler(sampled_labels)
+    random_balanced_idx = support_sampler(sampled_labels, bs)
     temp_train, temp_labels = (
         sampled_train[random_balanced_idx],
         sampled_labels[random_balanced_idx],
