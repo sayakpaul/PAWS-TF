@@ -1,5 +1,5 @@
 # Imports
-from utils import multicrop_loader, labeled_loader, trainer, config
+from utils import multicrop_loader, labeled_loader, paws_trainer, config
 from models import resnet20
 import matplotlib.pyplot as plt
 import tensorflow as tf
@@ -42,7 +42,7 @@ epoch_ce_losses = []
 epoch_me_losses = []
 
 ############## Training ##############
-for e in range(config.EPOCHS):
+for e in range(config.PRETRAINING_EPOCHS):
     print(f"=======Starting epoch: {e}=======")
     batch_ce_losses = []
     batch_me_losses = []
@@ -57,7 +57,7 @@ for e in range(config.EPOCHS):
         support_labels = tf.concat([support_labels for _ in range(config.SUP_VIEWS)], axis=0)
 
         # Perform training step
-        batch_ce_loss, batch_me_loss, gradients = trainer.train_step(
+        batch_ce_loss, batch_me_loss, gradients = paws_trainer.train_step(
             unsup_imgs, (support_images, support_labels), resnet20_enc
         )
         batch_ce_losses.append(batch_ce_loss.numpy())
@@ -83,8 +83,8 @@ plt.grid()
 plt.savefig(config.PRETRAINING_PLOT, dpi=300)
 
 # Serialize model
-resnet20_enc.save(config.SAVE_PATH)
-print(f"Encoder serialized to : {config.SAVE_PATH}")
+resnet20_enc.save(config.PRETRAINED_MODEL)
+print(f"Encoder serialized to : {config.PRETRAINED_MODEL}")
 
 # Serialize other artifacts
 np.save(config.SUPPORT_IDX, sampled_idx)

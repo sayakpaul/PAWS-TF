@@ -84,7 +84,6 @@ def get_paws_loss(multicrop=6, tau=0.1, T=0.25, me_max=True):
 def get_suncet_loss(num_classes=10,
     batch_size=64,
     temperature=0.1,
-    unique_classes=False,
     rank=0):
     """
     Computes supervised noise contrastive estimation loss (refer
