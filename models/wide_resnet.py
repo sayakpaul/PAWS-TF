@@ -144,7 +144,7 @@ def get_network(hidden_dim=128, use_pred=False, return_before_head=True):
         use_bias=False,
     )(
         x
-    )  # One conv at the beginning (spatial size: 32x32)
+    )
 
     # Add wide residual blocks
     block_fn = wide_basic
