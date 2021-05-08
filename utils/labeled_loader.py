@@ -66,4 +66,4 @@ def get_support_ds(ds, bs, aug=True):
             )
         loaders += (balanced_ds,)
 
-    return tf.data.Dataset.zip(loaders).batch(bs)
+    return tf.data.Dataset.zip(loaders).batch(bs).prefetch(AUTO)
