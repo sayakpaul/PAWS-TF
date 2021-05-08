@@ -23,7 +23,7 @@ def support_sampler(support_ds):
 
 def onehot_encode(labels, label_smoothing=0.1):
     """
-    One-hot encode label with label smoothing.
+    One-hot encode labels with label smoothing.
 
     :param labels: (batch_size, )
     return: one-hot encoded labels with optional label smoothing
