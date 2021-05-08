@@ -1,4 +1,4 @@
-from . import multicrop_loader
+from . import multicrop_loader, config
 import tensorflow as tf
 import numpy as np
 
@@ -52,7 +52,7 @@ def get_support_ds(ds, bs, aug=True):
     # As per Appendix C, for CIFAR10 2x views are needed for making
     # the network better at instance discrimination.
     loaders = tuple()
-    for _ in range(2):
+    for _ in range(config.SUP_VIEWS):
         if aug:
             balanced_ds = balanced_ds.map(
                 lambda x, y: (

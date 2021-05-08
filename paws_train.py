@@ -64,9 +64,15 @@ for e in range(config.PRETRAINING_EPOCHS):
     start_time = time.time()
 
     for unsup_imgs in multicrop_ds:
-        # Sample support images
+        # Sample support images, concat the images and labels, and
+        # then apply label-smoothing.
         support_images_one, support_images_two = next(iter(support_ds))
-        # Concat the images and labels, then apply label-smoothing
+        support_images = tf.concat(
+            [support_images_one[0], support_images_two[0]], axis=0
+        )
+        support_labels = tf.concat(
+            [support_images_one[1], support_images_two[1]], axis=0
+        )
         support_labels = labeled_loader.onehot_encode(
             support_labels, config.LABEL_SMOOTHING
         )

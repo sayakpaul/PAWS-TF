@@ -10,8 +10,8 @@ import numpy as np
 class WarmUpCosine(tf.keras.optimizers.schedules.LearningRateSchedule):
     """
     Implements an LR scheduler that warms up the learning rate for some training steps
-    # (usually at the beginning of the training) and then decays it
-    # with CosineDecay (see https://arxiv.org/abs/1608.03983)
+    (usually at the beginning of the training) and then decays it
+    with CosineDecay (see https://arxiv.org/abs/1608.03983)
     """
 
     def __init__(
@@ -27,7 +27,7 @@ class WarmUpCosine(tf.keras.optimizers.schedules.LearningRateSchedule):
 
     def __call__(self, step):
         if self.total_steps < self.warmup_steps:
-            raise ValueError("Total_steps must be larger or equal " "to warmup_steps.")
+            raise ValueError("Total_steps must be larger or equal to warmup_steps.")
         learning_rate = (
             0.5
             * self.learning_rate_base
