@@ -49,8 +49,6 @@ def color_jitter(x, strength=[0.4, 0.4, 0.4, 0.1]):
         x, lower=1 - 0.8 * strength[2], upper=1 + 0.8 * strength[2]
     )
     x = tf.image.random_hue(x, max_delta=0.2 * strength[3])
-    x = random_apply(solarize, x, p=0.8)
-    x = random_apply(tfa.image.equalize, x, p=0.8)
     x = tf.clip_by_value(x, 0, 255)
     return x
 
@@ -85,8 +83,10 @@ def random_resize_distort_crop(image, scale, crop_size):
     crop_resize = tf.image.resize(crop, (crop_size, crop_size))
 
     # Flip and color distortions
-    image = tf.image.random_flip_left_right(image)
+    image = tf.image.random_flip_left_right(crop_resize)
     image = random_apply(color_jitter, image, p=0.8)
+    image = random_apply(solarize, image, p=0.8)
+    image = random_apply(tfa.image.equalize, image, p=0.8)
     return image
 
 
