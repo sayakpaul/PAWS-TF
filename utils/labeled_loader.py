@@ -47,7 +47,9 @@ def get_support_ds(ds, bs, aug=True):
     # Since at each iteration the support dataset should have equal number
     # of images per class we assign uniform weights for sampling.
     listed_ds = support_sampler(ds)
-    balanced_ds = tf.data.experimental.sample_from_datasets(listed_ds, [0.1] * 10)
+    balanced_ds = tf.data.experimental.sample_from_datasets(
+        listed_ds, [0.1] * 10, seed=42
+    )
 
     # As per Appendix C, for CIFAR10 2x views are needed for making
     # the network better at instance discrimination.
