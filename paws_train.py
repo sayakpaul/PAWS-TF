@@ -1,5 +1,12 @@
 # Imports
-from utils import multicrop_loader, labeled_loader, paws_trainer, config, lr_scheduler
+from utils import (
+    multicrop_loader,
+    labeled_loader,
+    paws_trainer,
+    config,
+    lr_scheduler,
+    lars_optimizer,
+)
 from models import resnet20, wide_resnet
 import matplotlib.pyplot as plt
 import tensorflow as tf
@@ -19,34 +26,30 @@ WARMUP_STEPS = int(WARMUP_EPOCHS * STEPS_PER_EPOCH)
 # Prepare Dataset object for multicrop
 train_ds = tf.data.Dataset.from_tensor_slices(x_train)
 multicrop_ds = multicrop_loader.get_multicrop_loader(train_ds)
-multicrop_ds = multicrop_ds.shuffle(config.MULTICROP_BS * 100).batch(config.MULTICROP_BS).prefetch(AUTO)
+multicrop_ds = (
+    multicrop_ds.shuffle(config.MULTICROP_BS * 100)
+    .batch(config.MULTICROP_BS)
+    .prefetch(AUTO)
+)
 
 # Prepare support samples
 sampled_idx = np.random.choice(len(x_train), config.SUPPORT_SAMPLES)
 sampled_train, sampled_labels = x_train[sampled_idx], y_train[sampled_idx].squeeze()
-sampled_labels = tf.one_hot(
-    sampled_labels, depth=len(np.unique(sampled_labels))
-).numpy()
-
-# Label-smoothing (reference: https://t.ly/CSYO)
-sampled_labels *= 1 - config.LABEL_SMOOTHING
-sampled_labels += config.LABEL_SMOOTHING / sampled_labels.shape[1]
+initial_supp_ds = tf.data.Dataset.from_tensor_slices((sampled_train, sampled_labels))
 
 # Prepare dataset object for the support samples
-support_ds = labeled_loader.get_support_ds(
-    sampled_train, sampled_labels, bs=config.SUPPORT_BS
-)
+support_ds = labeled_loader.get_support_ds(initial_supp_ds, bs=config.SUPPORT_BS)
 print("Data loaders prepared.")
 
 # Initialize encoder and optimizer
-resnet_enc = resnet20.get_network()
+wide_resnet_enc = wide_resnet.get_network()
 scheduled_lrs = lr_scheduler.WarmUpCosine(
     learning_rate_base=config.WARMUP_LR,
     total_steps=config.PRETRAINING_EPOCHS * STEPS_PER_EPOCH,
     warmup_learning_rate=config.START_LR,
     warmup_steps=WARMUP_STEPS,
 )
-optimizer = tf.keras.optimizers.SGD(learning_rate=scheduled_lrs, momentum=0.9)
+optimizer = lars_optimizer.LARS(learning_rate=scheduled_lrs, momentum=0.9)
 print("Model and optimizer initialized.")
 
 # Loss tracker
@@ -62,25 +65,20 @@ for e in range(config.PRETRAINING_EPOCHS):
 
     for unsup_imgs in multicrop_ds:
         # Sample support images
-        # As per Appendix C, for CIFAR10 2x views are needed for making
-        # the network better at instance discrimination.
         support_images, support_labels = next(iter(support_ds))
-        support_images = tf.concat(
-            [support_images for _ in range(config.SUP_VIEWS)], axis=0
-        )
-        support_labels = tf.concat(
-            [support_labels for _ in range(config.SUP_VIEWS)], axis=0
+        support_labels = labeled_loader.onehot_encode(
+            support_labels, config.LABEL_SMOOTHING
         )
 
         # Perform training step
         batch_ce_loss, batch_me_loss, gradients = paws_trainer.train_step(
-            unsup_imgs, (support_images, support_labels), resnet_enc
+            unsup_imgs, (support_images, support_labels), wide_resnet_enc
         )
         batch_ce_losses.append(batch_ce_loss.numpy())
         batch_me_losses.append(batch_me_loss.numpy())
 
         # Update the parameters of the encoder
-        optimizer.apply_gradients(zip(gradients, resnet_enc.trainable_variables))
+        optimizer.apply_gradients(zip(gradients, wide_resnet_enc.trainable_variables))
 
     print(
         f"Epoch: {e} CE Loss: {np.mean(batch_ce_losses):.3f}"
@@ -99,7 +97,7 @@ plt.grid()
 plt.savefig(config.PRETRAINING_PLOT, dpi=300)
 
 # Serialize model
-resnet_enc.save(config.PRETRAINED_MODEL)
+wide_resnet_enc.save(config.PRETRAINED_MODEL)
 print(f"Encoder serialized to : {config.PRETRAINED_MODEL}")
 
 # Serialize other artifacts

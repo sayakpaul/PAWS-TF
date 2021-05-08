@@ -156,7 +156,7 @@ def get_network(hidden_dim=128, use_pred=False, return_before_head=True):
         stride=(1, 1),
     )(
         conv1
-    )  # Stage 1 
+    )  # Stage 1
     conv3 = layer(
         block_fn,
         n_input_plane=n_stages[1],
@@ -165,7 +165,7 @@ def get_network(hidden_dim=128, use_pred=False, return_before_head=True):
         stride=(2, 2),
     )(
         conv2
-    )  # Stage 2 
+    )  # Stage 2
     conv4 = layer(
         block_fn,
         n_input_plane=n_stages[2],
@@ -174,7 +174,7 @@ def get_network(hidden_dim=128, use_pred=False, return_before_head=True):
         stride=(2, 2),
     )(
         conv3
-    )  # Stage 3 
+    )  # Stage 3
 
     batch_norm = layers.BatchNormalization()(conv4)
     relu = layers.Activation("relu")(batch_norm)

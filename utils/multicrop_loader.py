@@ -1,18 +1,35 @@
 """
 References:
     * https://arxiv.org/pdf/2104.13963.pdf
+    * https://github.com/szacho/augmix-tf
     * https://github.com/ayulockin/SwAV-TF/blob/master/initial_notebooks/Building_MultiCropDataset.ipynb
 """
 
+import tensorflow_addons as tfa
 import tensorflow as tf
 
 
-BS = 64
 SIZE_CROPS = [32, 18]  # 32: global views, 18: local views
 NUM_CROPS = [2, 6]
 GLOBAL_SCALE = [0.75, 1.0]
 LOCAL_SCALE = [0.3, 0.75]
 AUTO = tf.data.AUTOTUNE
+
+
+@tf.function
+def float_parameter(level, maxval):
+    return tf.cast(level * maxval / 10.0, tf.float32)
+
+
+@tf.function
+def sample_level(n):
+    return tf.random.uniform(shape=[1], minval=0.1, maxval=n, dtype=tf.float32)
+
+
+@tf.function
+def solarize(image, level=6):
+    threshold = float_parameter(sample_level(level), 1)
+    return tf.where(image < threshold, image, 255 - image)
 
 
 @tf.function
@@ -32,20 +49,9 @@ def color_jitter(x, strength=[0.4, 0.4, 0.4, 0.1]):
         x, lower=1 - 0.8 * strength[2], upper=1 + 0.8 * strength[2]
     )
     x = tf.image.random_hue(x, max_delta=0.2 * strength[3])
+    x = random_apply(solarize, x, p=0.8)
+    x = random_apply(tfa.image.equalize, x, p=0.8)
     x = tf.clip_by_value(x, 0, 255)
-    return x
-
-
-@tf.function
-def color_drop(x):
-    """
-    Applies grayscale.
-
-    :param x: input image (h x w x nb_channels)
-    :return: grayscaled version of the image
-    """
-    x = tf.image.rgb_to_grayscale(x)
-    x = tf.tile(x, [1, 1, 3])
     return x
 
 
@@ -58,15 +64,7 @@ def random_apply(func, x, p):
 
 
 @tf.function
-def custom_augment(image):
-    image = tf.image.random_flip_left_right(image)
-    image = random_apply(color_jitter, image, p=0.8)
-    image = random_apply(color_drop, image, p=0.2)
-    return image
-
-
-@tf.function
-def random_resize_crop(image, scale, crop_size):
+def random_resize_distort_crop(image, scale, crop_size):
     # Conditional resizing
     if crop_size == 32:
         image_shape = 48
@@ -85,16 +83,18 @@ def random_resize_crop(image, scale, crop_size):
     # Get the crop from the image
     crop = tf.image.random_crop(image, (size, size, 3))
     crop_resize = tf.image.resize(crop, (crop_size, crop_size))
+
     # Flip and color distortions
-    distorted_image = custom_augment(crop_resize)
-    return distorted_image
+    image = tf.image.random_flip_left_right(image)
+    image = random_apply(color_jitter, image, p=0.8)
+    return image
 
 
 def get_multicrop_loader(ds: tf.data.Dataset):
     """
     Returns a multi-crop dataset.
 
-    :param ds: a TensorFlow dataset object
+    :param ds: a TensorFlow dataset object (containing only unlabeled images)
     :return: a multi-crop dataset
     """
     loaders = tuple()
@@ -106,7 +106,7 @@ def get_multicrop_loader(ds: tf.data.Dataset):
                 scale = LOCAL_SCALE
 
             loader = ds.map(
-                lambda x: random_resize_crop(x, scale, SIZE_CROPS[i]),
+                lambda x: random_resize_distort_crop(x, scale, SIZE_CROPS[i]),
                 num_parallel_calls=AUTO,
                 deterministic=True,
             )

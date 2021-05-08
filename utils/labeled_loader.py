@@ -3,52 +3,64 @@ import tensorflow as tf
 import numpy as np
 
 
+GLOBAL_SCALE = [0.75, 1.0]
 AUTO = tf.data.AUTOTUNE
 
 
-@tf.function
-def aug_for_labeled(image, label):
-    image = tf.image.random_crop(image, (32, 32, 3))
-    distorted_image = multicrop_loader.custom_augment(image)
-    return distorted_image, label
-
-
-def support_sampler(sampled_labels, bs):
+def support_sampler(support_ds):
     """
     Samples indices from the label array with a uniform distribution.
 
-    :param sampled_labels: labels (batch_size, num_classes)
-    :param bs: batch size (int)
-    :return: sampled indices
+    :param support_ds: TensorFlow dataset (each entry should have (image, label) pair)
+    :return: a list of datasets for each unique label of CiFAR-10
     """
-    # Since the labels are one-hot encoded we first need to get them
-    # in their original form to do the sampling.
-    sampled_labels = np.argmax(sampled_labels, axis=1).squeeze()
-    idxs = []
-    for class_id in np.arange(0, 10):
-        subset_labels = sampled_labels[sampled_labels == class_id]
-        random_sampled = np.random.choice(len(subset_labels), bs // 10)
-        idxs.append(random_sampled)
-    return np.array(np.concatenate(idxs))
+    ds = []
+    for i in np.arange(0, 10):
+        ds_label = support_ds.filter(lambda image, label: label == i).repeat()
+        ds.append(ds_label)
+    return ds
 
 
-def get_support_ds(sampled_train, sampled_labels, bs, aug=True):
+def onehot_encode(labels, label_smoothing=0.1):
+    """
+    One-hot encode label with label smoothing.
+
+    :param labels: (batch_size, )
+    return: one-hot encoded labels with optional label smoothing
+    """
+    labels = tf.one_hot(labels, depth=10)
+    # Reference: https://t.ly/CSYO)
+    labels *= 1.0 - label_smoothing
+    labels += label_smoothing / labels.shape[1]
+    return labels
+
+
+def get_support_ds(ds, bs, aug=True):
     """
     Prepares TensorFlow dataset with sampling as suggested in:
     https://arxiv.org/abs/2104.13963 (See Appendix C)
 
-    :param sampled_train: images (batch_size, h, w, nb_channels)
-    :param sampled_labels: labels (batch_size, num_classes)
+    :param ds: TensorFlow dataset (each entry should have (image, label) pair)
     :param bs: batch size (int)
-    :return: TensorFlow dataset object
+    :return: a multi-crop dataset
     """
-    random_balanced_idx = support_sampler(sampled_labels, bs)
-    temp_train, temp_labels = (
-        sampled_train[random_balanced_idx],
-        sampled_labels[random_balanced_idx],
-    )
-    support_ds = tf.data.Dataset.from_tensor_slices((temp_train, temp_labels))
-    support_ds = support_ds.shuffle(bs * 100)
-    if aug:
-        support_ds = support_ds.map(aug_for_labeled, num_parallel_calls=AUTO)
-    return support_ds.batch(bs)
+    # Since at each iteration the support dataset should have equal number
+    # of images per class we assign uniform weights for sampling.
+    balanced_ds = tf.data.experimental.sample_from_datasets(ds, [0.1] * 10).batch(bs)
+
+    # As per Appendix C, for CIFAR10 2x views are needed for making
+    # the network better at instance discrimination.
+    loaders = tuple()
+    for _ in range(2):
+        if aug:
+            balanced_ds = balanced_ds.map(
+                lambda x, y: (
+                    multicrop_loader.random_resize_distort_crop(x, GLOBAL_SCALE, 32),
+                    y,
+                ),
+                num_parallel_calls=AUTO,
+                deterministic=True,
+            )
+        loaders += (balanced_ds,)
+
+    return tf.data.Dataset.zip(loaders)

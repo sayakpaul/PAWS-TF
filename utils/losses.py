@@ -64,7 +64,7 @@ def get_paws_loss(multicrop=6, tau=0.1, T=0.25, me_max=True):
                 [targets, *[mc_target for _ in range(multicrop)]], axis=0
             )
         # For numerical stability
-        mask = tf.math.less(targets, 1e-4)
+        mask = tf.math.greater(targets, 1e-4)
         mask = tf.cast(mask, dtype=targets.dtype)
         targets *= mask
 
