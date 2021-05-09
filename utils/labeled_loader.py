@@ -2,7 +2,6 @@ from . import multicrop_loader, config
 import tensorflow as tf
 import numpy as np
 
-
 GLOBAL_SCALE = [0.75, 1.0]
 AUTO = tf.data.AUTOTUNE
 
@@ -11,7 +10,8 @@ def support_sampler(support_ds):
     """
     Samples indices from the label array with a uniform distribution.
 
-    :param support_ds: TensorFlow dataset (each entry should have (image, label) pair)
+    :param support_ds: TensorFlow dataset (each entry should have (
+    image, label) pair)
     :return: a list of datasets for each unique label of CiFAR-10
     """
     ds = []
@@ -23,7 +23,7 @@ def support_sampler(support_ds):
 
 def onehot_encode(labels, label_smoothing=0.1):
     """
-    One-hot encode labels with label smoothing.
+    One-hot encode label with label smoothing.
 
     :param labels: (batch_size, )
     return: one-hot encoded labels with optional label smoothing
@@ -40,11 +40,13 @@ def get_support_ds(ds, bs, aug=True):
     Prepares TensorFlow dataset with sampling as suggested in:
     https://arxiv.org/abs/2104.13963 (See Appendix C)
 
-    :param ds: TensorFlow dataset (each entry should have (image, label) pair)
+    :param ds: TensorFlow dataset (each entry should have (image,
+    label) pair)
     :param bs: batch size (int)
     :return: a multi-crop dataset
     """
-    # Since at each iteration the support dataset should have equal number
+    # Since at each iteration the support dataset should have equal
+    # number
     # of images per class we assign uniform weights for sampling.
     listed_ds = support_sampler(ds)
     balanced_ds = tf.data.experimental.sample_from_datasets(
@@ -66,4 +68,5 @@ def get_support_ds(ds, bs, aug=True):
             )
         loaders += (balanced_ds,)
 
-    return tf.data.Dataset.zip(loaders).batch(bs).prefetch(AUTO)
+    zipped_loaders = tf.data.Dataset.zip(loaders)
+    return zipped_loaders

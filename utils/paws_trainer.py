@@ -35,8 +35,8 @@ def train_step(unsup_images, sup_loader, encoder: tf.keras.Model):
         # Pass through the global views (including images from the
         # support set) and multicrop views.
         # h: trunk output, z, z_mc: projection output
-        h, z = encoder(imgs)
-        _, z_mc = encoder(mc_imgs)
+        h, z = encoder(imgs, training=True)
+        _, z_mc = encoder(mc_imgs, training=True)
 
         # Determine anchor views / supports and their  corresponding
         # target views/supports (we are not using prediction head)

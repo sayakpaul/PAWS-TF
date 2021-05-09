@@ -13,7 +13,6 @@ import tensorflow as tf
 import numpy as np
 import time
 
-
 # Load dataset
 (x_train, y_train), (_, _) = tf.keras.datasets.cifar10.load_data()
 
@@ -27,7 +26,7 @@ WARMUP_STEPS = int(WARMUP_EPOCHS * STEPS_PER_EPOCH)
 train_ds = tf.data.Dataset.from_tensor_slices(x_train)
 multicrop_ds = multicrop_loader.get_multicrop_loader(train_ds)
 multicrop_ds = (
-    multicrop_ds.shuffle(config.MULTICROP_BS * 100)
+    multicrop_ds.shuffle(config.MULTICROP_BS * 10)
     .batch(config.MULTICROP_BS)
     .prefetch(AUTO)
 )
@@ -39,6 +38,9 @@ initial_supp_ds = tf.data.Dataset.from_tensor_slices((sampled_train, sampled_lab
 
 # Prepare dataset object for the support samples
 support_ds = labeled_loader.get_support_ds(initial_supp_ds, bs=config.SUPPORT_BS)
+support_ds = (
+    support_ds.shuffle(config.SUPPORT_BS * 10).batch(config.SUPPORT_BS).prefetch(AUTO)
+)
 print("Data loaders prepared.")
 
 # Initialize encoder and optimizer
@@ -52,16 +54,16 @@ scheduled_lrs = lr_scheduler.WarmUpCosine(
 optimizer = lars_optimizer.LARS(learning_rate=scheduled_lrs, momentum=0.9)
 print("Model and optimizer initialized.")
 
-# Loss tracker
+# Loss trackers
 epoch_ce_losses = []
 epoch_me_losses = []
 
 ############## Training ##############
 for e in range(config.PRETRAINING_EPOCHS):
     print(f"=======Starting epoch: {e}=======")
-    batch_ce_losses = []
-    batch_me_losses = []
     start_time = time.time()
+    epoch_ce_loss_avg = tf.keras.metrics.Mean()
+    epoch_me_loss_avg = tf.keras.metrics.Mean()
 
     for unsup_imgs in multicrop_ds:
         # Sample support images, concat the images and labels, and
@@ -81,25 +83,25 @@ for e in range(config.PRETRAINING_EPOCHS):
         batch_ce_loss, batch_me_loss, gradients = paws_trainer.train_step(
             unsup_imgs, (support_images, support_labels), wide_resnet_enc
         )
-        batch_ce_losses.append(batch_ce_loss.numpy())
-        batch_me_losses.append(batch_me_loss.numpy())
-
         # Update the parameters of the encoder
         optimizer.apply_gradients(zip(gradients, wide_resnet_enc.trainable_variables))
 
+        epoch_ce_loss_avg.update_state(batch_ce_loss)
+        epoch_me_loss_avg.update_state(batch_me_loss)
+
     print(
-        f"Epoch: {e} CE Loss: {np.mean(batch_ce_losses):.3f}"
-        f" ME-MAX Loss: {np.mean(batch_me_losses):.3f}"
-        f" Time elapsed: {time.time()-start_time:.2f} secs"
+        f"Epoch: {e} CE Loss: {epoch_ce_loss_avg.result():.3f}"
+        f" ME-MAX Loss: {epoch_me_loss_avg.result():.3f}"
+        f" Time elapsed: {time.time() - start_time:.2f} secs"
     )
     print("")
-    epoch_ce_losses.append(np.mean(batch_ce_losses))
-    epoch_me_losses.append(np.mean(batch_me_losses))
+    epoch_ce_losses.append(epoch_ce_loss_avg.result())
+    epoch_me_losses.append(epoch_me_loss_avg.result())
 
 # Create a plot to see the cross-entropy losses
 plt.figure(figsize=(8, 8))
 plt.plot(epoch_ce_losses)
-plt.title("Cross-entropy losses during pre-training", fontsize=12)
+plt.title("PAWS Training Cross-Entropy Loss", fontsize=12)
 plt.grid()
 plt.savefig(config.PRETRAINING_PLOT, dpi=300)
 

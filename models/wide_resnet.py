@@ -142,9 +142,7 @@ def get_network(hidden_dim=128, use_pred=False, return_before_head=True):
         kernel_initializer=INIT,
         kernel_regularizer=regularizers.l2(WEIGHT_DECAY),
         use_bias=False,
-    )(
-        x
-    )
+    )(x)
 
     # Add wide residual blocks
     block_fn = wide_basic
