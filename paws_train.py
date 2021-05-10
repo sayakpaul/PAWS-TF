@@ -54,7 +54,7 @@ scheduled_lrs = lr_scheduler.WarmUpCosine(
 optimizer = lars_optimizer.LARS(learning_rate=scheduled_lrs,
     momentum=0.9,
     exclude_from_weight_decay=["batch_normalization", "bias"],
-    exclude_from_layer_adaptation=["batch_normalization", "bias"])                            )
+    exclude_from_layer_adaptation=["batch_normalization", "bias"])
 print("Model and optimizer initialized.")
 
 # Loss trackers
