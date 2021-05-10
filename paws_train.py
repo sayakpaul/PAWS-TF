@@ -13,6 +13,7 @@ import tensorflow as tf
 import numpy as np
 import time
 
+
 # Load dataset
 (x_train, y_train), (_, _) = tf.keras.datasets.cifar10.load_data()
 
@@ -39,7 +40,7 @@ initial_supp_ds = tf.data.Dataset.from_tensor_slices((sampled_train, sampled_lab
 # Prepare dataset object for the support samples
 support_ds = labeled_loader.get_support_ds(initial_supp_ds, bs=config.SUPPORT_BS)
 support_ds = (
-    support_ds.shuffle(config.SUPPORT_BS * 10).batch(config.SUPPORT_BS).prefetch(AUTO)
+    support_ds.shuffle(config.SUPPORT_BS * 5).batch(config.SUPPORT_BS).prefetch(AUTO)
 )
 print("Data loaders prepared.")
 
@@ -49,12 +50,14 @@ scheduled_lrs = lr_scheduler.WarmUpCosine(
     learning_rate_base=config.WARMUP_LR,
     total_steps=config.PRETRAINING_EPOCHS * STEPS_PER_EPOCH,
     warmup_learning_rate=config.START_LR,
-    warmup_steps=WARMUP_STEPS
+    warmup_steps=WARMUP_STEPS,
 )
-optimizer = lars_optimizer.LARS(learning_rate=scheduled_lrs,
+optimizer = lars_optimizer.LARS(
+    learning_rate=scheduled_lrs,
     momentum=0.9,
     exclude_from_weight_decay=["batch_normalization", "bias"],
-    exclude_from_layer_adaptation=["batch_normalization", "bias"])
+    exclude_from_layer_adaptation=["batch_normalization", "bias"],
+)
 print("Model and optimizer initialized.")
 
 # Loss trackers
@@ -68,7 +71,7 @@ for e in range(config.PRETRAINING_EPOCHS):
     epoch_ce_loss_avg = tf.keras.metrics.Mean()
     epoch_me_loss_avg = tf.keras.metrics.Mean()
 
-    for unsup_imgs in multicrop_ds:
+    for i, unsup_imgs in enumerate(multicrop_ds):
         # Sample support images, concat the images and labels, and
         # then apply label-smoothing.
         support_images_one, support_images_two = next(iter(support_ds))
@@ -86,16 +89,16 @@ for e in range(config.PRETRAINING_EPOCHS):
         batch_ce_loss, batch_me_loss, gradients = paws_trainer.train_step(
             unsup_imgs, (support_images, support_labels), wide_resnet_enc
         )
-        # Update the parameters of the encoder
-        optimizer.apply_gradients(zip(gradients, wide_resnet_enc.trainable_variables))
-
         epoch_ce_loss_avg.update_state(batch_ce_loss)
         epoch_me_loss_avg.update_state(batch_me_loss)
+
+        # Update the parameters of the encoder
+        optimizer.apply_gradients(zip(gradients, wide_resnet_enc.trainable_variables))
 
     print(
         f"Epoch: {e} CE Loss: {epoch_ce_loss_avg.result():.3f}"
         f" ME-MAX Loss: {epoch_me_loss_avg.result():.3f}"
-        f" Time elapsed: {time.time() - start_time:.2f} secs"
+        f" Time elapsed: {time.time()-start_time:.2f} secs"
     )
     print("")
     epoch_ce_losses.append(epoch_ce_loss_avg.result())
