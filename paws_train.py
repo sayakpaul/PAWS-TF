@@ -32,16 +32,8 @@ multicrop_ds = (
     .prefetch(AUTO)
 )
 
-# Prepare support samples
-sampled_idx = np.random.choice(len(x_train), config.SUPPORT_SAMPLES)
-sampled_train, sampled_labels = x_train[sampled_idx], y_train[sampled_idx].squeeze()
-initial_supp_ds = tf.data.Dataset.from_tensor_slices((sampled_train, sampled_labels))
-
 # Prepare dataset object for the support samples
-support_ds = labeled_loader.get_support_ds(initial_supp_ds, bs=config.SUPPORT_BS)
-support_ds = (
-    support_ds.shuffle(config.SUPPORT_BS * 5).batch(config.SUPPORT_BS).prefetch(AUTO)
-)
+support_ds = labeled_loader.get_support_ds(config.SUPPORT_BS)
 print("Data loaders prepared.")
 
 # Initialize encoder and optimizer
@@ -114,6 +106,3 @@ plt.savefig(config.PRETRAINING_PLOT, dpi=300)
 # Serialize model
 wide_resnet_enc.save(config.PRETRAINED_MODEL)
 print(f"Encoder serialized to : {config.PRETRAINED_MODEL}")
-
-# Serialize other artifacts
-np.save(config.SUPPORT_IDX, sampled_idx)

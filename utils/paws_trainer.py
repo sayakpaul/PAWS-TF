@@ -16,7 +16,7 @@ def train_step(unsup_images, sup_loader, encoder: tf.keras.Model):
     :param unsup_images: unsupervised images (nb_crops, batch_size, h, w, nb_channels)
     :param sup_loader: data loader for the labeled support set
     :param encoder: trunk with projection head
-    :return: loss and gradients
+    :return: losses (ce and me-max) and gradients
     """
     # Get batch size for unsupervised images
     u_batch_size = tf.shape(unsup_images[0])[0]
