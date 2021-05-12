@@ -23,7 +23,9 @@ for layer in wide_resnet_enc.layers:
     else:
         layer.trainable = True
 
-scheduled_lr = tf.keras.experimental.CosineDecay(initial_learning_rate=0.1, decay_steps=TOTAL_STEPS)
+scheduled_lr = tf.keras.experimental.CosineDecay(
+    initial_learning_rate=0.1, decay_steps=TOTAL_STEPS
+)
 optimizer = tf.keras.optimizers.SGD(learning_rate=scheduled_lr, momentum=0.9)
 print("Model and optimizer initialized.")
 
@@ -36,12 +38,8 @@ for e in range(config.FINETUNING_EPOCHS):
 
     for i, (set_one, set_two) in enumerate(support_ds):
         #  Concat the 2x views from the support set.
-        support_images = tf.concat(
-            [set_one[0], set_two[0]], axis=0
-        )
-        support_labels = tf.concat(
-            [set_one[1], set_two[1]], axis=0
-        )
+        support_images = tf.concat([set_one[0], set_two[0]], axis=0)
+        support_labels = tf.concat([set_one[1], set_two[1]], axis=0)
         # Note: no label-smoothing: https://git.io/Jskgu
         support_labels = tf.one_hot(support_labels, depth=30)
 
@@ -55,10 +53,7 @@ for e in range(config.FINETUNING_EPOCHS):
         epoch_suncet_loss_avg.update_state(batch_suncet_loss)
 
         if (i % 50) == 0:
-            print(
-                "[%d, %5d] SUNCET loss: %.3f"
-                % (e, i, batch_suncet_loss.numpy())
-            )
+            print("[%d, %5d] SUNCET loss: %.3f" % (e, i, batch_suncet_loss.numpy()))
     print(
         f"Epoch: {e} SUNCET Loss: {epoch_suncet_loss_avg.result():.3f}"
         f" Time elapsed: {time.time()-start_time:.2f} secs"
