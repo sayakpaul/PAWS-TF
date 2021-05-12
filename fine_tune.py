@@ -23,9 +23,7 @@ sampled_labels = tf.one_hot(
 # Note: no label-smoothing (https://github.com/facebookresearch/suncet/blob/master/configs/paws/cifar10_snn.yaml#L10)
 
 # Prepare dataset object for the support samples
-support_ds = labeled_loader.get_support_ds(
-    sampled_train, sampled_labels, aug=False, bs=config.SUPPORT_BS
-)
+support_ds = labeled_loader.get_support_ds(aug=False, bs=config.SUPPORT_BS)
 print("Data loaders prepared.")
 
 # Initialize encoder and optimizer

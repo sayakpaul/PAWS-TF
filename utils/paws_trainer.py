@@ -14,19 +14,20 @@ def train_step(unsup_images, sup_loader, encoder: tf.keras.Model):
     One step of PAWS training.
 
     :param unsup_images: unsupervised images (nb_crops, batch_size, h, w, nb_channels)
-    :param sup_loader: data loader for the labeled support set
+    :param sup_loader: tuple of images and one-hot encoded labels from the support set
     :param encoder: trunk with projection head
     :return: losses (ce and me-max) and gradients
     """
     # Get batch size for unsupervised images
     u_batch_size = tf.shape(unsup_images[0])[0]
 
-    # Unsupervised imgs (2 views)
+    # Unsupervised global (2) and local (6) views
     imgs = tf.concat([u for u in unsup_images[:2]], axis=0)
-    # Unsupervised multicrop img views (6 views)
     mc_imgs = tf.concat([u for u in unsup_images[2:]], axis=0)
+
     # Segregate images and labels from support set
     simgs, labels = sup_loader
+
     # Concatenate unlabeled images and labeled support images
     imgs, simgs = tf.cast(imgs, tf.float32), tf.cast(simgs, tf.float32)
     imgs = tf.concat([imgs, simgs], axis=0)
@@ -60,6 +61,7 @@ def train_step(unsup_images, sup_loader, encoder: tf.keras.Model):
             target_support_labels=labels,
         )
         loss = ploss + me_max
+
     # Compute gradients
     gradients = tape.gradient(loss, encoder.trainable_variables)
     return ploss, me_max, gradients

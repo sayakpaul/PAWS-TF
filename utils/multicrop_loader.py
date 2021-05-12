@@ -18,16 +18,34 @@ AUTO = tf.data.AUTOTUNE
 
 @tf.function
 def float_parameter(level, maxval):
+    """
+    Type-casting to float.
+
+    :param level: determines the intensity of a transformation (should
+    be in [1, 10] range) (int)
+    :param maxval: upper limit of the pixel (int)
+    :return: updated upper limit casted to float
+    """
     return tf.cast(level * maxval / 10.0, tf.float32)
 
 
 @tf.function
 def sample_level(n):
+    """
+    Uniform sampling with [0.1, n) range.
+    """
     return tf.random.uniform(shape=[1], minval=0.1, maxval=n, dtype=tf.float32)
 
 
 @tf.function
 def solarize(image, level=6):
+    """
+    Performs solarization.
+
+    :param image: input image (h, w, nb_channels)
+    :param level: intensity level (int)
+    :return: solarized image
+    """
     threshold = float_parameter(sample_level(level), 1)
     return tf.where(image < threshold, image, 255 - image)
 
@@ -55,6 +73,9 @@ def color_jitter(x, strength=[0.4, 0.4, 0.4, 0.1]):
 
 @tf.function
 def random_apply(func, x, p):
+    """
+    Utility to apply a function to a given input with a probability.
+    """
     if tf.random.uniform([], minval=0, maxval=1) < p:
         return func(x)
     else:
@@ -63,6 +84,15 @@ def random_apply(func, x, p):
 
 @tf.function
 def random_resize_distort_crop(image, scale, crop_size):
+    """
+    Applies random-resized cropping and other augmentations including
+    flipping, color distortions (includes solarization and equalization).
+
+    :param image: input image (h, w, nb_channels)
+    :param scale: scale to be used during random-resized crop (ex - [0.3, 0.7])
+    :param crop_size: size to crop to (int)
+    :return: random-resized and distorted image
+    """
     # Conditional resizing
     if crop_size == 32:
         image_shape = 48

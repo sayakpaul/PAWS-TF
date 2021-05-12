@@ -247,7 +247,11 @@ def get_network(n=2, hidden_dim=128, use_pred=False, return_before_head=True):
 
     # The input tensor
     inputs = Input(shape=(None, None, 3))
-    x = experimental.preprocessing.Rescaling(scale=1.0 / 127.5, offset=-1)(inputs)
+    x = experimental.preprocessing.Rescaling(scale=1.0 / 255)(inputs)
+    x = experimental.preprocessing.Normalization(
+        mean=[0.4914, 0.4822, 0.4465],
+        variance=[i ** 2 for i in [0.2023, 0.1994, 0.2010]],
+    )(x)
 
     # The Stem Convolution Group
     x = stem(x)
@@ -256,11 +260,11 @@ def get_network(n=2, hidden_dim=128, use_pred=False, return_before_head=True):
     x = learner(x, n_blocks)
 
     # Projections
-    trunk_output = GlobalAvgPool2D()(x)
-    projection_outputs = projection_head(trunk_output, hidden_dim=hidden_dim)
+    trunk_outputs = GlobalAvgPool2D()(x)
+    projection_outputs = projection_head(trunk_outputs, hidden_dim=hidden_dim)
 
     if return_before_head:
-        model = Model(inputs, [trunk_output, projection_outputs])
+        model = Model(inputs, [trunk_outputs, projection_outputs])
     else:
         model = Model(inputs, projection_outputs)
 

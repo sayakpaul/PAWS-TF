@@ -27,11 +27,11 @@ def wide_basic(n_input_plane, n_output_plane, stride):
         for i, v in enumerate(conv_params):
             if i == 0:
                 if n_input_plane != n_output_plane:
-                    net = layers.BatchNormalization()(net)
+                    net = layers.BatchNormalization(epsilon=1e-05, momentum=0.1)(net)
                     net = layers.Activation("relu")(net)
                     convs = net
                 else:
-                    convs = layers.BatchNormalization()(net)
+                    convs = layers.BatchNormalization(epsilon=1e-05, momentum=0.1)(net)
                     convs = layers.Activation("relu")(convs)
                 convs = layers.Conv2D(
                     n_bottleneck_plane,
@@ -43,7 +43,7 @@ def wide_basic(n_input_plane, n_output_plane, stride):
                     use_bias=False,
                 )(convs)
             else:
-                convs = layers.BatchNormalization()(convs)
+                convs = layers.BatchNormalization(epsilon=1e-05, momentum=0.1)(convs)
                 convs = layers.Activation("relu")(convs)
                 convs = layers.Conv2D(
                     n_bottleneck_plane,
@@ -99,7 +99,7 @@ def projection_head(x, hidden_dim=128):
             name=f"projection_layer_{i}",
             kernel_regularizer=regularizers.l2(WEIGHT_DECAY),
         )(x)
-        x = layers.BatchNormalization()(x)
+        x = layers.BatchNormalization(epsilon=1e-05, momentum=0.1)(x)
         x = layers.Activation("relu")(x)
     outputs = layers.Dense(hidden_dim, use_bias=False, name="projection_output")(x)
     return outputs
@@ -107,14 +107,14 @@ def projection_head(x, hidden_dim=128):
 
 def prediction_head(x, hidden_dim=128, mx=4):
     """Constructs the prediction head."""
-    x = layers.BatchNormalization()(x)
+    x = layers.BatchNormalization(epsilon=1e-05, momentum=0.1)(x)
     x = layers.Dense(
         hidden_dim // mx,
         use_bias=False,
         name=f"prediction_layer_0",
         kernel_regularizer=regularizers.l2(WEIGHT_DECAY),
     )(x)
-    x = layers.BatchNormalization()(x)
+    x = layers.BatchNormalization(epsilon=1e-05, momentum=0.1)(x)
     x = layers.Activation("relu")(x)
     x = layers.Dense(
         hidden_dim,
@@ -130,9 +130,11 @@ def get_network(hidden_dim=128, use_pred=False, return_before_head=True):
     n_stages = [16, 16 * WIDTH_MULT, 32 * WIDTH_MULT, 64 * WIDTH_MULT]
 
     inputs = layers.Input(shape=(None, None, 3))
-    x = layers.experimental.preprocessing.Rescaling(scale=1.0 / 127.5, offset=-1)(
-        inputs
-    )
+    x = layers.experimental.preprocessing.Rescaling(scale=1.0 / 255)(inputs)
+    x = layers.experimental.preprocessing.Normalization(
+        mean=[0.4914, 0.4822, 0.4465],
+        variance=[i ** 2 for i in [0.2023, 0.1994, 0.2010]],
+    )(x)
 
     conv1 = layers.Conv2D(
         n_stages[0],
@@ -174,19 +176,16 @@ def get_network(hidden_dim=128, use_pred=False, return_before_head=True):
         conv3
     )  # Stage 3
 
-    batch_norm = layers.BatchNormalization()(conv4)
+    batch_norm = layers.BatchNormalization(epsilon=1e-05, momentum=0.1)(conv4)
     relu = layers.Activation("relu")(batch_norm)
 
     # Trunk outputs
-    pool = layers.AveragePooling2D(pool_size=(8, 8), strides=(1, 1), padding="same")(
-        relu
-    )
-    trunk_output = layers.GlobalAveragePooling2D()(pool)
+    trunk_outputs = layers.GlobalAveragePooling2D()(relu)
 
     # Projections
-    projection_outputs = projection_head(trunk_output, hidden_dim=hidden_dim)
+    projection_outputs = projection_head(trunk_outputs, hidden_dim=hidden_dim)
     if return_before_head:
-        model = tf.keras.Model(inputs, [trunk_output, projection_outputs])
+        model = tf.keras.Model(inputs, [trunk_outputs, projection_outputs])
     else:
         model = tf.keras.Model(inputs, projection_outputs)
 

@@ -7,10 +7,9 @@ from utils import (
     lr_scheduler,
     lars_optimizer,
 )
-from models import resnet20, wide_resnet
+from models import wide_resnet
 import matplotlib.pyplot as plt
 import tensorflow as tf
-import numpy as np
 import time
 
 
@@ -66,7 +65,13 @@ for e in range(config.PRETRAINING_EPOCHS):
     for i, unsup_imgs in enumerate(multicrop_ds):
         # Sample support images, concat the images and labels, and
         # then apply label-smoothing.
-        support_images_one, support_images_two = next(iter(support_ds))
+        global iter_supervised
+        try:
+            sdata = next(iter_supervised)
+        except Exception:
+            iter_supervised = iter(support_ds)
+            sdata = next(iter_supervised)
+        support_images_one, support_images_two = sdata
         support_images = tf.concat(
             [support_images_one[0], support_images_two[0]], axis=0
         )
@@ -81,11 +86,23 @@ for e in range(config.PRETRAINING_EPOCHS):
         batch_ce_loss, batch_me_loss, gradients = paws_trainer.train_step(
             unsup_imgs, (support_images, support_labels), wide_resnet_enc
         )
-        epoch_ce_loss_avg.update_state(batch_ce_loss)
-        epoch_me_loss_avg.update_state(batch_me_loss)
 
         # Update the parameters of the encoder
         optimizer.apply_gradients(zip(gradients, wide_resnet_enc.trainable_variables))
+
+        if (i % 50) == 0:
+            print(
+                "[%d, %5d] loss: %.3f (%.3f %.3f)"
+                % (
+                    e,
+                    i,
+                    batch_ce_loss.numpy() + batch_me_loss.numpy(),
+                    batch_ce_loss.numpy(),
+                    batch_me_loss.numpy(),
+                )
+            )
+        epoch_ce_loss_avg.update_state(batch_ce_loss)
+        epoch_me_loss_avg.update_state(batch_me_loss)
 
     print(
         f"Epoch: {e} CE Loss: {epoch_ce_loss_avg.result():.3f}"

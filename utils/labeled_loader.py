@@ -52,6 +52,7 @@ def get_support_ds(bs, aug=True):
     https://arxiv.org/abs/2104.13963 (See Appendix C)
 
     :param bs: batch size (int)
+    :param aug: boolean indicating if augmentation should be applied
     :return: a multi-crop dataset
     """
     # As per Appendix C, for CIFAR10 2x views are needed for making
@@ -59,7 +60,7 @@ def get_support_ds(bs, aug=True):
     # Reference:
     # https://stackoverflow.com/questions/46938530/
     ds = tf.data.Dataset.range(10).interleave(
-        lambda: dataset_for_class,
+        dataset_for_class,
         cycle_length=10,
         num_parallel_calls=AUTO,
         deterministic=True,

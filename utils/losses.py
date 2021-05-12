@@ -30,8 +30,8 @@ def get_paws_loss(multicrop=6, tau=0.1, T=0.25, me_max=True):
     def snn(query, supports, labels):
         """ Soft Nearest Neighbours similarity classifier """
         # Step 1: Normalize embeddings
-        query = tf.math.l2_normalize(query)
-        supports = tf.math.l2_normalize(supports)
+        query = tf.math.l2_normalize(query, axis=1)
+        supports = tf.math.l2_normalize(supports, axis=1)
 
         # Step 2: Compute similarity
         return tf.nn.softmax(query @ tf.transpose(supports) / tau, axis=1) @ labels
@@ -57,16 +57,18 @@ def get_paws_loss(multicrop=6, tau=0.1, T=0.25, me_max=True):
         targets = tf.stop_gradient(
             snn(target_views, target_supports, target_support_labels)
         )
-        targets = sharpen(targets)
+        targets = tf.stop_gradient(sharpen(targets))
         if multicrop > 0:
-            mc_target = 0.5 * (targets[:batch_size] + targets[batch_size:])
-            targets = tf.concat(
-                [targets, *[mc_target for _ in range(multicrop)]], axis=0
+            mc_target = tf.stop_gradient(
+                0.5 * (targets[:batch_size] + targets[batch_size:])
+            )
+            targets = tf.stop_gradient(
+                tf.concat([targets, *[mc_target for _ in range(multicrop)]], axis=0)
             )
         # For numerical stability
-        mask = tf.math.greater(targets, 1e-4)
-        mask = tf.cast(mask, dtype=targets.dtype)
-        targets *= mask
+        mask = tf.stop_gradient(tf.math.greater(targets, 1e-4))
+        mask = tf.stop_gradient(tf.cast(mask, dtype=targets.dtype))
+        targets *= tf.stop_gradient(mask)
 
         # Step 3: compute cross-entropy loss H(targets, queries)
         loss = tf.reduce_mean(tf.reduce_sum(tf.math.log(probs ** (-targets)), axis=1))
@@ -90,7 +92,7 @@ def get_suncet_loss(num_classes=10, batch_size=64, temperature=0.1, rank=0):
     :param num_classes: number of image classes
     :param batch_size: number of images per class per batch
     :param temperature: cosine temperature
-    :param rank: denotes single-GPU
+    :param rank: denotes the rank of the current deivce (0 in this implementation)
     :return: SUNCET loss
     """
     local_images = batch_size * num_classes
@@ -101,11 +103,10 @@ def get_suncet_loss(num_classes=10, batch_size=64, temperature=0.1, rank=0):
         diag_mask[i, offset + i] = 0.0
 
     def contrastive_loss(z, labels):
+        # Step 1: Normalize embeddings
+        z = tf.math.l2_normalize(z, axis=1)
 
-        # Step 1: normalize embeddings
-        z = tf.math.l2_normalize(z)
-
-        # Step 2: compute class predictions
+        # Step 2: Compute class predictions
         exp_cs = tf.math.exp(z @ tf.transpose(z) / temperature) * diag_mask
         exp_cs_sum = tf.reduce_sum(exp_cs, axis=1, keepdims=True)
         probs = tf.math.divide(exp_cs, exp_cs_sum) @ labels
