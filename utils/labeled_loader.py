@@ -1,6 +1,7 @@
 from . import multicrop_loader, config
 import tensorflow as tf
 import numpy as np
+import os
 
 GLOBAL_SCALE = [0.75, 1.0]
 AUTO = tf.data.AUTOTUNE
@@ -26,8 +27,11 @@ def sample_dataset():
     Returns a randomly sampled dataset and saves the randomly sampled
     indices.
     """
-    sampled_idx = np.random.choice(len(X_TRAIN), config.SUPPORT_SAMPLES)
-    np.save(config.SUPPORT_IDX, sampled_idx)
+    if not os.path.exists(config.SUPPORT_IDX):
+        sampled_idx = np.random.choice(len(X_TRAIN), config.SUPPORT_SAMPLES)
+        np.save(config.SUPPORT_IDX, sampled_idx)
+    else:
+        sampled_idx = np.load(config.SUPPORT_IDX)
 
     sampled_train, sampled_labels = X_TRAIN[sampled_idx], Y_TRAIN[sampled_idx].squeeze()
     return tf.data.Dataset.from_tensor_slices((sampled_train, sampled_labels))
