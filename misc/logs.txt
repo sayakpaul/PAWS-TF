@@ -1,3 +1,4 @@
+$ python paws_train.py
 Data loaders prepared.
 Model and optimizer initialized.
 =======Starting epoch: 0=======
@@ -350,5 +351,41 @@ Epoch: 48 CE Loss: 0.796 ME-MAX Loss: -2.297 Time elapsed: 102.78 secs
 [49,   150] loss: -1.494 (0.803 -2.298)
 Epoch: 49 CE Loss: 0.795 ME-MAX Loss: -2.296 Time elapsed: 102.76 secs
 
-
 Encoder serialized to : paws_encoder
+
+=======================================================================
+
+$ python fine_tune.py
+Data loaders prepared.
+Model and optimizer initialized.
+=======Starting epoch: 0=======
+Epoch: 0 SUNCET Loss: 0.212 Time elapsed: 4.09 secs
+
+=======Starting epoch: 1=======
+Epoch: 1 SUNCET Loss: 0.153 Time elapsed: 1.42 secs
+
+=======Starting epoch: 2=======
+Epoch: 2 SUNCET Loss: 0.126 Time elapsed: 1.41 secs
+
+=======Starting epoch: 3=======
+Epoch: 3 SUNCET Loss: 0.107 Time elapsed: 1.41 secs
+
+=======Starting epoch: 4=======
+Epoch: 4 SUNCET Loss: 0.096 Time elapsed: 1.42 secs
+
+=======Starting epoch: 5=======
+Epoch: 5 SUNCET Loss: 0.088 Time elapsed: 1.43 secs
+
+=======Starting epoch: 6=======
+Epoch: 6 SUNCET Loss: 0.083 Time elapsed: 1.40 secs
+
+=======Starting epoch: 7=======
+Epoch: 7 SUNCET Loss: 0.080 Time elapsed: 1.43 secs
+
+=======Starting epoch: 8=======
+Epoch: 8 SUNCET Loss: 0.078 Time elapsed: 1.43 secs
+
+=======Starting epoch: 9=======
+Epoch: 9 SUNCET Loss: 0.076 Time elapsed: 1.44 secs
+
+Encoder serialized to : paws_finetuned

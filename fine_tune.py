@@ -5,9 +5,8 @@ import tensorflow as tf
 import numpy as np
 import time
 
-
 # Constants
-STEPS_PER_EPOCH = int((config.SUPPORT_SAMPLES * config.SUP_VIEWS) // config.SUPPORT_BS)
+STEPS_PER_EPOCH = int(config.SUPPORT_SAMPLES // config.SUPPORT_BS)
 TOTAL_STEPS = config.FINETUNING_EPOCHS * STEPS_PER_EPOCH
 
 # Prepare dataset object for the support samples
@@ -29,7 +28,6 @@ scheduled_lr = tf.keras.experimental.CosineDecay(
 optimizer = tf.keras.optimizers.SGD(learning_rate=scheduled_lr, momentum=0.9)
 print("Model and optimizer initialized.")
 
-
 ############## Training ##############
 for e in range(config.FINETUNING_EPOCHS):
     print(f"=======Starting epoch: {e}=======")
@@ -37,11 +35,14 @@ for e in range(config.FINETUNING_EPOCHS):
     start_time = time.time()
 
     for i, (set_one, set_two) in enumerate(support_ds):
+        if i == STEPS_PER_EPOCH:
+            break
+
         #  Concat the 2x views from the support set.
         support_images = tf.concat([set_one[0], set_two[0]], axis=0)
         support_labels = tf.concat([set_one[1], set_two[1]], axis=0)
         # Note: no label-smoothing: https://git.io/Jskgu
-        support_labels = tf.one_hot(support_labels, depth=30)
+        support_labels = tf.one_hot(support_labels, depth=10)
 
         # Perform training step
         batch_suncet_loss, gradients = suncet_fine_tune.train_step(
@@ -52,11 +53,10 @@ for e in range(config.FINETUNING_EPOCHS):
         optimizer.apply_gradients(zip(gradients, wide_resnet_enc.trainable_variables))
         epoch_suncet_loss_avg.update_state(batch_suncet_loss)
 
-        if (i % 50) == 0:
-            print("[%d, %5d] SUNCET loss: %.3f" % (e, i, batch_suncet_loss.numpy()))
     print(
-        f"Epoch: {e} SUNCET Loss: {epoch_suncet_loss_avg.result():.3f}"
-        f" Time elapsed: {time.time()-start_time:.2f} secs"
+        f"Epoch: {e} SUNCET Loss: "
+        f"{epoch_suncet_loss_avg.result():.3f}"
+        f" Time elapsed: {time.time() - start_time:.2f} secs"
     )
     print("")
 

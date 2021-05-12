@@ -6,6 +6,7 @@ Majority of the code comes from here:
  https://github.com/facebookresearch/suncet/blob/master/src/losses.py
 """
 
+from . import config
 from copy import deepcopy
 import tensorflow as tf
 
@@ -84,7 +85,9 @@ def get_paws_loss(multicrop=6, tau=0.1, T=0.25, me_max=True):
     return loss
 
 
-def get_suncet_loss(num_classes=10, batch_size=64, temperature=0.1, rank=0):
+def get_suncet_loss(
+    num_classes=10, batch_size=64 * config.SUP_VIEWS, temperature=0.1, rank=0
+):
     """
     Computes supervised noise contrastive estimation loss (refer
     https://arxiv.org/abs/2006.10803)
@@ -97,10 +100,11 @@ def get_suncet_loss(num_classes=10, batch_size=64, temperature=0.1, rank=0):
     """
     local_images = batch_size * num_classes
     total_images = deepcopy((local_images))
-    diag_mask = tf.ones((local_images, total_images))
+    diag_mask = tf.Variable(tf.ones((local_images, total_images)))
     offset = rank * local_images
     for i in range(local_images):
-        diag_mask[i, offset + i] = 0.0
+        diag_mask[i, offset + i].assign(0.0)
+    diag_mask = tf.convert_to_tensor(diag_mask)
 
     def contrastive_loss(z, labels):
         # Step 1: Normalize embeddings
