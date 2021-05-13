@@ -4,7 +4,11 @@ TensorFlow 2 implementation of [Semi-Supervised Learning of Visual Features by N
 
 PAWS introduces a simple way to combine a very small fraction of labeled data with a comparatively larger corpus of unlabeled data _during_ pre-training. With its approach, it sets the state-of-the-art in semi-supervised learning (as of May 2021) beating methods like [SimCLRV2](https://arxiv.org/abs/2006.10029), [Meta Pseudo Labels](https://arxiv.org/abs/2003.10580) that too with **fewer parameters and a smaller pre-training schedule**. For details, I recommend checking out the original paper as well as [this blog post](https://ai.facebook.com/blog/dino-paws-computer-vision-with-self-supervised-transformers-and-10x-more-efficient-training/) by the authors. 
 
-This repository implements and includes all the major bits proposed in PAWS in TensorFlow. The current code works with CIFAR10 and uses 4000 labeled samples (**8%**) during pre-training (along with the unlabeled samples). The only major difference is that the pre-training and subsequent fine-tuning weren't run for the original number of epochs (600 and 30 respectively) to save compute. I have reused the utility components for PAWS loss from the [original implementation](https://github.com/facebookresearch/suncet/).
+This repository implements and includes all the major bits proposed in PAWS in TensorFlow. The only major difference is that the pre-training and subsequent fine-tuning weren't run for the original number of epochs (600 and 30 respectively) to save compute. I have reused the utility components for PAWS loss from the [original implementation](https://github.com/facebookresearch/suncet/).
+
+## Dataset ⌗
+
+The current code works with CIFAR10 and uses 4000 labeled samples (**8%**) during pre-training (along with the unlabeled samples).
 
 ## Features ✨
 
@@ -61,7 +65,7 @@ There are two Colab Notebooks:
 
 ## Acknowledgements
 
-* Huge amount of thanks to Mahmoud Assran (first author of PAWS) for patiently resolving my doubts.
+* Huge amount of thanks to [Mahmoud Assran](https://www.linkedin.com/in/midoassran/) (first author of PAWS) for patiently resolving my doubts.
 * [ML-GDE program](https://developers.google.com/programs/experts/) for providing GCP credit support. 
 
 ## Paper Citation
