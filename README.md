@@ -8,11 +8,11 @@ This repository implements and includes all the major bits proposed in PAWS in T
 
 ## Features ✨
 
-✅ Multi-crop augmentation strategy (originally introduced in [SwAV](https://arxiv.org/abs/2006.09882))
+✅  Multi-crop augmentation strategy (originally introduced in [SwAV](https://arxiv.org/abs/2006.09882))
 
-✅ WarmUpCosine learning rate schedule (which is typical for self-supervised and semi-supervised pre-training schedules)
+✅  WarmUpCosine learning rate schedule (which is typical for self-supervised and semi-supervised pre-training schedules)
 
-✅ LARS optimizer (comes from [TensorFlow Model Garden](https://github.com/tensorflow/models/blob/master/official/modeling/optimization/lars_optimizer.py))
+✅  LARS optimizer (comes from [TensorFlow Model Garden](https://github.com/tensorflow/models/blob/master/official/modeling/optimization/lars_optimizer.py))
 
 The trunk portion (all, but the last classification layer) of a WideResNet-28-2 is used inside the encoder for CIFAR10. All the experimental configurations were followed from the Appendix C of the paper. 
 
@@ -49,7 +49,7 @@ In the following PCA projection plot, we see that the embeddings of images (comp
 There are two Colab Notebooks:
 
 * [`colabs/data_prep.ipynb`](https://github.com/sayakpaul/PAWS-TF/blob/main/colabs/data_prep.ipynb): It walks through the process of constructing a multi-crop dataset with CIFAR10.
-* [`visualization_paws_projections.ipynb`](https://github.com/sayakpaul/PAWS-TF/blob/main/colabs/visualization_paws_projections.ipynb): Visualizes the PCA projections of pre-computed embeddings. 
+* [`colabs/visualization_paws_projections.ipynb`](https://github.com/sayakpaul/PAWS-TF/blob/main/colabs/visualization_paws_projections.ipynb): Visualizes the PCA projections of pre-computed embeddings. 
 
 ## Misc ⺟
 
