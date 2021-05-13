@@ -389,3 +389,19 @@ Epoch: 8 SUNCET Loss: 0.078 Time elapsed: 1.43 secs
 Epoch: 9 SUNCET Loss: 0.076 Time elapsed: 1.44 secs
 
 Encoder serialized to : paws_finetuned
+
+=======================================================================
+
+$ python nn_eval.py
+Data loaders prepared.
+Fine-tuned encoder loaded.
+Embeddings computed from the available labeled samples.
+Batch 0 Top-1 Accuracy: 73.438%
+Batch 5 Top-1 Accuracy: 75.391%
+Batch 10 Top-1 Accuracy: 75.000%
+Batch 15 Top-1 Accuracy: 77.344%
+Batch 20 Top-1 Accuracy: 71.875%
+Batch 25 Top-1 Accuracy: 75.000%
+Batch 30 Top-1 Accuracy: 76.172%
+Batch 35 Top-1 Accuracy: 72.656%
+Top-1 accuracy: 73.459999%
