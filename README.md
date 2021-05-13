@@ -8,11 +8,13 @@ This repository implements and includes all the major bits proposed in PAWS in T
 
 ## Features ✨
 
-✅  Multi-crop augmentation strategy (originally introduced in [SwAV](https://arxiv.org/abs/2006.09882))
+✅ ' ' Multi-crop augmentation strategy (originally introduced in [SwAV](https://arxiv.org/abs/2006.09882))
 
-✅  WarmUpCosine learning rate schedule (which is typical for self-supervised and semi-supervised pre-training schedules)
+✅ ' ' Class stratified sampler (common in few-shot classification problems)
 
-✅  LARS optimizer (comes from [TensorFlow Model Garden](https://github.com/tensorflow/models/blob/master/official/modeling/optimization/lars_optimizer.py))
+✅ ' ' WarmUpCosine learning rate schedule (which is typical for self-supervised and semi-supervised pre-training schedules)
+
+✅ ' ' LARS optimizer (comes from [TensorFlow Model Garden](https://github.com/tensorflow/models/blob/master/official/modeling/optimization/lars_optimizer.py))
 
 The trunk portion (all, but the last classification layer) of a WideResNet-28-2 is used inside the encoder for CIFAR10. All the experimental configurations were followed from the Appendix C of the paper. 
 
@@ -53,7 +55,7 @@ There are two Colab Notebooks:
 
 ## Misc ⺟
 
-* Model weights available [here](https://github.com/sayakpaul/PAWS-TF/releases/tag/v1.0.0) for reproducibility. 
+* Model weights are available [here](https://github.com/sayakpaul/PAWS-TF/releases/tag/v1.0.0) for reproducibility. 
 * With mixed-precision training, the performance can further be improved. I am open to accepting contributions that would implement mixed-precision training in the current code.
 
 ## Acknowledgements
