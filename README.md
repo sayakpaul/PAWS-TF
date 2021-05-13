@@ -27,6 +27,8 @@ Pre-training and fine-tuning total take **1.4 hours** to complete. All the logs 
 
 ## Results 📊
 
+### Pre-training
+
 PAWS minimizes the cross-entropy loss (as well as maximizes mean-entropy) during pre-training. This is what the training plot indicates too:
 
 <div align="center">
@@ -34,6 +36,8 @@ PAWS minimizes the cross-entropy loss (as well as maximizes mean-entropy) during
 </div>
 
 To evaluate the effectivity of the pre-training, PAWS performs soft nearest neighbor classification to report the top-1 accuracy score on a given test set.
+
+### Top-1 Accuracy
 
 This repository gets to **73.46%** top-1 accuracy on the CIFAR10 test set. Again, **note** that I only pre-trained for 50 epochs (as opposed to 600) and fine-tuned for 10 epochs (as opposed to 30). With the original schedule this score should be around 96.0%. 
 
