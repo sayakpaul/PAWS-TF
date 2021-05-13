@@ -1,15 +1,13 @@
 # Imports
 from utils import labeled_loader, suncet_fine_tune, config
-import matplotlib.pyplot as plt
 import tensorflow as tf
-import numpy as np
 import time
 
 # Constants
 STEPS_PER_EPOCH = int(config.SUPPORT_SAMPLES // config.SUPPORT_BS)
 TOTAL_STEPS = config.FINETUNING_EPOCHS * STEPS_PER_EPOCH
 
-# Prepare dataset object for the support samples
+# Prepare Dataset object for the support samples
 # Note - no augmentation
 support_ds = labeled_loader.get_support_ds(aug=False, bs=config.SUPPORT_BS)
 print("Data loaders prepared.")
