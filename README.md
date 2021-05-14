@@ -1,6 +1,6 @@
 # PAWS-TF 🐾
-TensorFlow 2 implementation of [Semi-Supervised Learning of Visual Features by Non-Parametrically Predicting View Assignments with Support Samples](https://arxiv.org/abs/2104.13963)
- (PAWS) in TensorFlow. 
+Implementation of [Semi-Supervised Learning of Visual Features by Non-Parametrically Predicting View Assignments with Support Samples](https://arxiv.org/abs/2104.13963)
+ (PAWS) in TensorFlow (2.4.1). 
 
 PAWS introduces a simple way to combine a very small fraction of labeled data with a comparatively larger corpus of unlabeled data _during_ pre-training. With its approach, it sets the state-of-the-art in semi-supervised learning (as of May 2021) beating methods like [SimCLRV2](https://arxiv.org/abs/2006.10029), [Meta Pseudo Labels](https://arxiv.org/abs/2003.10580) that too with **fewer parameters and a smaller pre-training schedule**. For details, I recommend checking out the original paper as well as [this blog post](https://ai.facebook.com/blog/dino-paws-computer-vision-with-self-supervised-transformers-and-10x-more-efficient-training/) by the authors. 
 
