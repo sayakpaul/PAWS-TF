@@ -19,7 +19,7 @@ import time
 # Constants
 AUTO = tf.data.AUTOTUNE
 STEPS_PER_EPOCH = int(len(x_train) // config.MULTICROP_BS)
-WARMUP_EPOCHS = int(config.PRETRAINING_EPOCHS * 0.1)
+WARMUP_EPOCHS = 10
 WARMUP_STEPS = int(WARMUP_EPOCHS * STEPS_PER_EPOCH)
 
 # Prepare Dataset object for multicrop
